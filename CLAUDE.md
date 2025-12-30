@@ -151,6 +151,23 @@ help:
 
 <!-- markdownlint-restore -->
 
+## Environment Variable Naming
+
+All project-specific environment variables must use a common project-specific
+prefix to avoid conflicts with other tools:
+
+- **Prefix pattern**: `PROJECTNAME_` in uppercase with underscores
+- **Example for meetup-scheduler**:
+  - `MEETUP_SCHEDULER_ACCESS_TOKEN` (not `MEETUP_ACCESS_TOKEN`)
+  - `MEETUP_SCHEDULER_TOKEN_FILE` (not `MEETUP_TOKEN_FILE`)
+  - `MEETUP_SCHEDULER_DEBUG` (not `DEBUG`)
+
+This naming convention:
+
+1. Prevents collisions with environment variables from other tools
+2. Makes it clear which application owns the variable
+3. Aligns with the Makefile variable prefix convention
+
 ## GitHub Repository Standards
 
 For projects hosted on GitHub:
