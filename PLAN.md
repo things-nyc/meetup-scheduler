@@ -166,7 +166,59 @@ Created by `meetup-scheduler init`:
     └── 2025-q1.json
 ```
 
-### 3.3 Security for OAuth Tokens
+### 3.3 Venue Aliases
+
+Organizers can define shorthand aliases for venues in their configuration. The alias
+is whatever makes sense to the organizer (e.g., "wework", "fatcat", "online").
+
+**User-level venue aliases** (`~/.config/meetup-scheduler/config.json`):
+
+```json
+{
+  "venueAliases": {
+    "wework-37th": {
+      "venueId": "abc123",
+      "description": "WeWork 500 7th Ave (37th St)"
+    },
+    "fatcat": {
+      "venueId": "def456",
+      "description": "Fat Cat Fab Lab"
+    }
+  }
+}
+```
+
+**Project-level venue aliases** (`.meetup-scheduler/project.json`):
+
+```json
+{
+  "venueAliases": {
+    "clubhouse": {
+      "venueId": "xyz789",
+      "description": "Ithaca Generator Clubhouse"
+    }
+  }
+}
+```
+
+**Resolution order**: Project aliases override user aliases. In event JSON files,
+use the alias directly in the `venue` field:
+
+```json
+{
+  "events": [
+    {
+      "title": "TTN NYC Business Meeting",
+      "venue": "wework-37th",
+      "startDateTime": "2025-01-02T19:00:00-05:00"
+    }
+  ]
+}
+```
+
+The `sync` command auto-generates alias suggestions from discovered venues.
+
+### 3.4 Security for OAuth Tokens
 
 1. Store tokens in `credentials.json` with restricted permissions (0600 on Unix)
 2. Support `MEETUP_ACCESS_TOKEN` environment variable override
@@ -188,11 +240,27 @@ Created by `meetup-scheduler init`:
   "required": ["events"],
   "properties": {
     "$schema": { "type": "string" },
+    "options": {
+      "type": "object",
+      "description": "File-level scheduling options (highest priority; overrides CLI flags)",
+      "properties": {
+        "onConflict": {
+          "enum": ["error", "skip", "update", "prompt"],
+          "default": "prompt",
+          "description": "Behavior when event already exists at same time/group"
+        },
+        "seriesMode": {
+          "enum": ["link", "independent"],
+          "default": "independent",
+          "description": "Whether to link related events as a Meetup series"
+        }
+      }
+    },
     "defaults": {
       "type": "object",
       "properties": {
         "groupUrlname": { "type": "string" },
-        "venueId": { "type": "string" },
+        "venue": { "type": "string", "description": "Venue ID or alias" },
         "duration": { "$ref": "#/$defs/duration" },
         "publishStatus": { "enum": ["DRAFT", "PUBLISHED"], "default": "DRAFT" },
         "rsvpSettings": { "$ref": "#/$defs/rsvpSettings" }
@@ -219,7 +287,7 @@ Created by `meetup-scheduler init`:
         "startDateTime": { "type": "string", "format": "date-time" },
         "duration": { "$ref": "#/$defs/duration" },
         "groupUrlname": { "type": "string" },
-        "venueId": { "type": "string" },
+        "venue": { "type": "string", "description": "Venue ID or alias" },
         "publishStatus": { "enum": ["DRAFT", "PUBLISHED"] },
         "eventHosts": {
           "type": "array",
@@ -341,9 +409,14 @@ sync:
 schedule:
   meetup-scheduler schedule <FILE.json> [options]
   Options:
-    --dry-run         Validate and show summary, don't create events
-    --output FORMAT   Output format: summary, markdown, json (default: summary)
-    --update          Update existing events instead of creating new
+    --dry-run             Validate and show summary, don't create events
+    --output FORMAT       Output format: summary, markdown, json (default: summary)
+    --on-conflict MODE    Behavior for existing events: error, skip, update, prompt
+                          (default: prompt; overridden by JSON file "options.onConflict")
+    --series-mode MODE    Series linking: link, independent
+                          (default: independent; overridden by JSON file "options.seriesMode")
+
+  Priority order: JSON file options > CLI flags > defaults
 
 generate:
   meetup-scheduler generate [options]
@@ -451,14 +524,83 @@ query GetPastEvents($urlname: String!, $after: String) {
 }
 ```
 
-### 7.3 Authentication Flow
+### 7.3 Authentication Setup
 
-1. User creates OAuth consumer at meetup.com (requires Pro subscription)
-2. `meetup-scheduler config oauth.client_id <ID>`
-3. `meetup-scheduler config oauth.client_secret <SECRET>`
-4. `meetup-scheduler sync` triggers browser-based OAuth flow
-5. Tokens stored in `credentials.json`
-6. Auto-refresh on expiration
+Meetup requires OAuth2 authentication for API access. This section documents the
+complete setup process.
+
+**Important**: All credential and configuration files are stored in the **task
+directory** (the working directory where you run the tool) or in the user-level
+config directory. The tool never writes to its own installation/source directory.
+
+#### Prerequisites
+
+- A Meetup Pro subscription (required to create OAuth consumers)
+- Organizer role on at least one Meetup group
+
+#### Step 1: Create an OAuth Consumer
+
+1. Log in to Meetup.com with your organizer account
+2. Navigate to your OAuth consumers page (via API settings)
+3. Click "Create OAuth Consumer"
+4. Fill in the required fields:
+   - **Consumer Name**: `meetup-scheduler` (or your preferred name)
+   - **Application Website**: Your website or repository URL
+   - **Redirect URI**: `http://localhost:8400/callback` (for local OAuth flow)
+   - **Description**: Brief description of your scheduling tool
+5. Save and note your **Client ID** and **Client Secret**
+
+#### Step 2: Configure meetup-scheduler
+
+```bash
+meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"
+meetup-scheduler config oauth.client_secret "YOUR_CLIENT_SECRET"
+```
+
+Configuration is stored in the user-level config directory (see Section 3.1).
+
+#### Step 3: Authorize (First Run)
+
+When you first run a command that requires API access (e.g., `sync`), the tool will:
+
+1. Start a temporary local HTTP server on port 8400
+2. Open your default browser to Meetup's authorization page
+3. After you authorize, Meetup redirects to `localhost:8400/callback`
+4. The tool captures the authorization code and exchanges it for tokens
+5. Tokens are stored in `credentials.json` in the **user-level config directory**
+
+#### Token Management
+
+- **Access tokens** expire after 1 hour
+- **Refresh tokens** are used automatically to obtain new access tokens
+- Refresh tokens are single-use; each refresh provides a new refresh token
+- If refresh fails, the tool prompts for re-authorization
+
+#### Alternative: Environment Variables
+
+For CI/CD or automated environments:
+
+```bash
+export MEETUP_ACCESS_TOKEN="your_access_token"
+# Or point to a file containing the token:
+export MEETUP_TOKEN_FILE="/path/to/token.txt"
+```
+
+#### Security Best Practices
+
+1. Never commit credentials to version control
+2. When `init` creates a task directory, it adds credential patterns to `.gitignore`
+3. On Unix systems, `credentials.json` is created with mode 0600
+4. Use environment variables in shared/CI environments
+5. Rotate credentials periodically via Meetup's OAuth management page
+
+#### File Location Summary
+
+| File | Location | Purpose |
+|------|----------|---------|
+| `config.json` | User config dir | OAuth client ID, organizer info |
+| `credentials.json` | User config dir | OAuth tokens (access, refresh) |
+| `.gitignore` | Task directory | Updated by `init` to exclude secrets |
 
 ---
 
@@ -686,20 +828,54 @@ dev-dependencies = [
 
 ---
 
-## 12. Open Questions for User
+## 12. Design Decisions (Resolved)
 
-1. **OAuth Consumer**: Do you already have a Meetup OAuth consumer created, or do we need to document that setup process in detail?
+The following decisions have been made and are reflected throughout this plan:
 
-2. **Venue Aliases**: Would you like support for venue aliases (e.g., "wework" → full venue ID) in the event JSON?
+### 12.1 OAuth Setup
 
-3. **Event Updates**: When running `schedule` on events that already exist, should the tool:
-   - Skip them (default)?
-   - Update them (require `--update` flag)?
-   - Prompt for each?
+OAuth consumer setup documentation is included in Section 7.3. The tool uses the
+OAuth2 Server Flow with a local callback server for the authorization step.
 
-4. **Notification**: Should the tool have an option to notify you (desktop notification, email template) when events are created?
+### 12.2 Venue Aliases
 
-5. **Series Linking**: Meetup supports event series. Should we attempt to link related events as a series in Meetup?
+Venue aliases are supported (Section 3.3). Organizers define shorthand names that
+make sense to them (e.g., "wework", "fatcat"). The `sync` command auto-generates
+alias suggestions from discovered venues.
+
+### 12.3 Conflict Handling
+
+When scheduling events that conflict with existing events, behavior is controlled
+by the `onConflict` option with four modes:
+
+- `error`: Fail immediately on conflict
+- `skip`: Skip conflicting events silently
+- `update`: Update the existing event
+- `prompt`: Ask the user for each conflict (default)
+
+This can be set in the JSON file (`options.onConflict`) or via CLI (`--on-conflict`).
+Priority: JSON file > CLI flag > default.
+
+### 12.4 Series Linking
+
+Meetup series linking is controlled by the `seriesMode` option:
+
+- `independent`: Events are created as standalone (default)
+- `link`: Events with the same `series` tag are linked as a Meetup series
+
+This can be set in the JSON file (`options.seriesMode`) or via CLI (`--series-mode`).
+Priority: JSON file > CLI flag > default.
+
+### 12.5 File Location Constraints
+
+**Critical design constraint**: The tool never writes files to its own installation
+or source directory. All outputs go to:
+
+- **User config directory**: User-level settings, OAuth credentials, cached data
+- **Task directory**: Project-specific files, `.gitignore` updates, VS Code schemas
+
+This ensures the tool works correctly whether installed via pip/uv or run from a
+local checkout.
 
 ---
 
