@@ -106,6 +106,10 @@ a local checkout.
 - Use `uv` for project and dependency management
 - Use `pytest` for testing with mocks for external API calls
 - All classes should have corresponding unit tests
+- All command-line options must have unit tests that verify:
+  - Each option is correctly parsed into the expected namespace attribute
+  - Default values are applied when options are not specified
+  - Option combinations and conflicts behave as expected
 
 ## Dependency Versioning
 

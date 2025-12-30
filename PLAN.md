@@ -856,35 +856,36 @@ dev-dependencies = [
 
 1. Project scaffolding (pyproject.toml, src layout, tests/)
 2. `App` class with argument parsing
-3. `ConfigManager` with `platformdirs` integration
-4. JSON Schema files as bundled resources
-5. `SchemaValidator` class
+3. Unit tests for CLI argument parsing (verify each option parses correctly)
+4. `ConfigManager` with `platformdirs` integration
+5. JSON Schema files as bundled resources
+6. `SchemaValidator` class
 
 ### Phase 2: Core Commands
 
-6. `InitCommand` - project initialization
-7. `ConfigCommand` - configuration management
-8. Unit tests for Phase 1-2
+7. `InitCommand` - project initialization
+8. `ConfigCommand` - configuration management
+9. Unit tests for Phase 1-2 classes
 
 ### Phase 3: Meetup Integration
 
-9. `AuthManager` - OAuth2 flow
-10. `MeetupClient` - GraphQL operations
-11. `SyncCommand` - fetch groups/venues
-12. Integration tests with mocked API
+10. `AuthManager` - OAuth2 flow
+11. `MeetupClient` - GraphQL operations
+12. `SyncCommand` - fetch groups/venues
+13. Integration tests with mocked API
 
 ### Phase 4: Scheduling
 
-13. `EventParser` - JSON parsing, duration normalization
-14. `ScheduleCommand` - create/update events
-15. `MarkdownGenerator` - summary output
-16. End-to-end tests
+14. `EventParser` - JSON parsing, duration normalization
+15. `ScheduleCommand` - create/update events
+16. `MarkdownGenerator` - summary output
+17. End-to-end tests
 
 ### Phase 5: Template Generation
 
-17. `RecurrenceGenerator` - date pattern parsing
-18. `GenerateCommand` - template creation
-19. Full test coverage
+18. `RecurrenceGenerator` - date pattern parsing
+19. `GenerateCommand` - template creation
+20. Full test coverage
 
 <!-- markdownlint-restore -->
 
