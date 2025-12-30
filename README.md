@@ -14,16 +14,19 @@ Batch-create Meetup.com events from JSON specifications.
 ## Installation
 
 ```bash
-uv pip install meetup-scheduler
+uv tool install meetup-scheduler
 ```
 
-Or install from source for development:
+Or install from source:
 
 ```bash
 git clone https://github.com/terrillmoore/meetup-scheduler.git
 cd meetup-scheduler
-uv pip install -e .
+uv tool install -e .
 ```
+
+If you prefer not to install globally, you can run commands from the source
+directory using `uv run meetup-scheduler` instead.
 
 ## Quick Start
 

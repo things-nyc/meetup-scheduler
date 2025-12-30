@@ -221,8 +221,8 @@ class InitCommand(BaseCommand):
             # Development mode - show install instructions
             print("Next steps:")
             print()
-            print("  If you haven't already, install meetup-scheduler for development:")
-            print(f"    uv pip install -e {source_dir}")
+            print("  If you haven't already, install meetup-scheduler globally:")
+            print(f"    uv tool install -e {source_dir}")
             print()
             print("  Then configure your project:")
             print(f"    cd {self._project_dir}")
