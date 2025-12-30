@@ -145,6 +145,12 @@ class App:
             help="Initialize project directory",
         )
         init_parser.add_argument(
+            "path",
+            nargs="?",
+            default=".",
+            help="Directory to initialize (default: current directory)",
+        )
+        init_parser.add_argument(
             "--force",
             action=argparse.BooleanOptionalAction,
             default=bool_default,

@@ -282,3 +282,158 @@ class TestInitCommandIdempotent:
         assert config.get("modified") is True
 
         assert (tmp_path / "events" / "my-events.json").exists()
+
+
+class TestInitCommandPathArgument:
+    """Test InitCommand path argument handling."""
+
+    def test_init_with_explicit_path(self, tmp_path: Path) -> None:
+        """Test that init creates project in specified path."""
+        target_dir = tmp_path / "my-project"
+
+        app = App(args=["init", str(target_dir)])
+        result = app.run()
+
+        assert result == 0
+        assert target_dir.is_dir()
+        assert (target_dir / ".meetup-scheduler").is_dir()
+        assert (target_dir / "events").is_dir()
+        assert (target_dir / "meetup-scheduler-local.json").exists()
+
+    def test_init_creates_nonexistent_directory(self, tmp_path: Path) -> None:
+        """Test that init creates the target directory if it doesn't exist."""
+        target_dir = tmp_path / "new-project"
+        assert not target_dir.exists()
+
+        app = App(args=["init", str(target_dir)])
+        result = app.run()
+
+        assert result == 0
+        assert target_dir.is_dir()
+
+    def test_init_creates_nested_directory(self, tmp_path: Path) -> None:
+        """Test that init creates nested directories."""
+        target_dir = tmp_path / "parent" / "child" / "project"
+        assert not target_dir.exists()
+
+        app = App(args=["init", str(target_dir)])
+        result = app.run()
+
+        assert result == 0
+        assert target_dir.is_dir()
+        assert (target_dir / ".meetup-scheduler").is_dir()
+
+    def test_init_with_dot_path(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init with '.' works in current directory."""
+        monkeypatch.chdir(tmp_path)
+
+        app = App(args=["init", "."])
+        result = app.run()
+
+        assert result == 0
+        assert (tmp_path / ".meetup-scheduler").is_dir()
+
+    def test_init_with_relative_path(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init works with relative paths."""
+        monkeypatch.chdir(tmp_path)
+
+        app = App(args=["init", "subdir/project"])
+        result = app.run()
+
+        assert result == 0
+        assert (tmp_path / "subdir" / "project" / ".meetup-scheduler").is_dir()
+
+    def test_init_default_path_is_current_directory(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init with no path argument uses current directory."""
+        monkeypatch.chdir(tmp_path)
+
+        app = App(args=["init"])
+        result = app.run()
+
+        assert result == 0
+        assert (tmp_path / ".meetup-scheduler").is_dir()
+
+
+class TestInitCommandSourceDirectoryProtection:
+    """Test that init refuses to run in the source directory."""
+
+    def test_refuses_source_directory(self, tmp_path: Path) -> None:
+        """Test that init refuses to run in a directory that looks like source."""
+        # Create a fake source directory structure
+        src_dir = tmp_path / "fake-source"
+        src_dir.mkdir()
+        (src_dir / "src" / "meetup_scheduler").mkdir(parents=True)
+        (src_dir / "pyproject.toml").write_text(
+            '[project]\nname = "meetup-scheduler"\n'
+        )
+
+        app = App(args=["init", str(src_dir)])
+        result = app.run()
+
+        # Should fail with error
+        assert result == 1
+
+    def test_allows_similar_but_different_project(self, tmp_path: Path) -> None:
+        """Test that init allows directories with similar structure but different name."""
+        # Create a directory with similar structure but different project name
+        other_dir = tmp_path / "other-project"
+        other_dir.mkdir()
+        (other_dir / "src" / "meetup_scheduler").mkdir(parents=True)
+        (other_dir / "pyproject.toml").write_text(
+            '[project]\nname = "other-project"\n'
+        )
+
+        app = App(args=["init", str(other_dir)])
+        result = app.run()
+
+        # Should succeed
+        assert result == 0
+
+    def test_allows_directory_without_pyproject(self, tmp_path: Path) -> None:
+        """Test that init allows directories without pyproject.toml."""
+        # Create a directory with src/meetup_scheduler but no pyproject.toml
+        other_dir = tmp_path / "no-pyproject"
+        other_dir.mkdir()
+        (other_dir / "src" / "meetup_scheduler").mkdir(parents=True)
+
+        app = App(args=["init", str(other_dir)])
+        result = app.run()
+
+        # Should succeed
+        assert result == 0
+
+
+class TestInitCommandOutput:
+    """Test InitCommand output messages."""
+
+    def test_prints_success_message(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that init prints a success message."""
+        target_dir = tmp_path / "my-project"
+
+        app = App(args=["init", str(target_dir)])
+        app.run()
+
+        captured = capsys.readouterr()
+        assert "Project initialized" in captured.out
+        assert str(target_dir) in captured.out
+
+    def test_prints_next_steps(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that init prints next steps."""
+        target_dir = tmp_path / "my-project"
+
+        app = App(args=["init", str(target_dir)])
+        app.run()
+
+        captured = capsys.readouterr()
+        assert "Next steps" in captured.out
+        assert "config" in captured.out

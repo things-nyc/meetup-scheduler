@@ -15,6 +15,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from meetup_scheduler.app import App
 
 
@@ -160,6 +162,24 @@ class TestAppCommands:
         """Test init --force defaults to False in production mode."""
         app = App(args=["init"])
         assert app.args.force is False
+
+    def test_init_path_argument(self) -> None:
+        """Test init accepts path argument."""
+        app = App(args=["init", "/some/path"])
+        assert app.args.command == "init"
+        assert app.args.path == "/some/path"
+
+    def test_init_path_default(self) -> None:
+        """Test init path defaults to current directory."""
+        app = App(args=["init"])
+        assert app.args.path == "."
+
+    def test_init_path_with_force(self) -> None:
+        """Test init with both path and --force."""
+        app = App(args=["init", "/some/path", "--force"])
+        assert app.args.command == "init"
+        assert app.args.path == "/some/path"
+        assert app.args.force is True
 
     def test_config_command(self) -> None:
         """Test config command is parsed."""
@@ -382,11 +402,24 @@ class TestAppRun:
 
     def test_stub_command_returns_zero(self) -> None:
         """Test that stub commands return 0."""
-        app = App(args=["init"])
+        # Use sync which is still a stub command
+        app = App(args=["sync"])
         assert app.run() == 0
 
-    def test_all_commands_return_zero(self) -> None:
+    def test_all_stub_commands_return_zero(self) -> None:
         """Test all stub commands return 0."""
-        for cmd in ["init", "config", "sync", "schedule", "generate"]:
+        # Only include commands that are still stubs (not yet implemented)
+        for cmd in ["sync", "schedule", "generate"]:
             app = App(args=[cmd])
             assert app.run() == 0, f"Command '{cmd}' should return 0"
+
+    def test_config_command_returns_zero(self) -> None:
+        """Test that config command returns 0."""
+        app = App(args=["config"])
+        assert app.run() == 0
+
+    def test_init_command_with_path_returns_zero(self, tmp_path: Path) -> None:
+        """Test that init command returns 0 with valid path."""
+        target = tmp_path / "test-project"
+        app = App(args=["init", str(target)])
+        assert app.run() == 0

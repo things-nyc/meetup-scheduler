@@ -62,7 +62,7 @@ class InitCommand(BaseCommand):
     def __init__(self, app: App, args: argparse.Namespace) -> None:
         """Initialize the command."""
         super().__init__(app, args)
-        self._project_dir = Path.cwd()
+        self._project_dir: Path | None = None
 
     def execute(self) -> int:
         """Execute the init command.
@@ -73,6 +73,25 @@ class InitCommand(BaseCommand):
         Raises:
             CommandError: If initialization fails.
         """
+        # Resolve target directory from path argument
+        path_arg = getattr(self.args, "path", ".") or "."
+        target_dir = Path(path_arg).resolve()
+
+        # Check if target is the meetup-scheduler source directory
+        if self._is_source_directory(target_dir):
+            raise self.Error(
+                f"Cannot initialize in the meetup-scheduler source directory: "
+                f"{target_dir}\n"
+                f"Please specify a different directory, e.g.:\n"
+                f"  meetup-scheduler init ../my-meetup-project"
+            )
+
+        # Create target directory if it doesn't exist
+        if not target_dir.exists():
+            target_dir.mkdir(parents=True)
+            self.app.log.info(f"Created directory: {target_dir}")
+
+        self._project_dir = target_dir
         force = getattr(self.args, "force", False) or False
 
         # Create directories
@@ -84,11 +103,48 @@ class InitCommand(BaseCommand):
         # Update .gitignore
         self._update_gitignore()
 
-        self.app.log.info("Project initialized successfully")
+        # Print success message with helpful instructions
+        self._print_success_message()
+
         return 0
+
+    def _is_source_directory(self, path: Path) -> bool:
+        """Check if the given path is the meetup-scheduler source directory.
+
+        Detects the source directory by checking for:
+        - src/meetup_scheduler/ directory exists
+        - pyproject.toml exists and contains 'name = "meetup-scheduler"'
+
+        Args:
+            path: Directory path to check.
+
+        Returns:
+            True if this appears to be the source directory.
+        """
+        # Check for src/meetup_scheduler/ directory
+        src_dir = path / "src" / "meetup_scheduler"
+        if not src_dir.is_dir():
+            return False
+
+        # Check for pyproject.toml with our project name
+        pyproject = path / "pyproject.toml"
+        if not pyproject.exists():
+            return False
+
+        try:
+            content = pyproject.read_text(encoding="utf-8")
+            # Simple check - look for our project name in the file
+            if 'name = "meetup-scheduler"' in content:
+                return True
+        except OSError:
+            pass
+
+        return False
 
     def _create_directories(self) -> None:
         """Create the project directory structure."""
+        assert self._project_dir is not None
+
         # Create .meetup-scheduler/cache/
         cache_dir = self._project_dir / self.CACHE_DIR / self.CACHE_SUBDIR
         cache_dir.mkdir(parents=True, exist_ok=True)
@@ -105,11 +161,13 @@ class InitCommand(BaseCommand):
         Args:
             force: If True, overwrite existing file.
         """
+        assert self._project_dir is not None
         config_path = self._project_dir / "meetup-scheduler-local.json"
 
         if config_path.exists() and not force:
             self.app.log.info(
-                f"Project config already exists: {config_path} (use --force to overwrite)"
+                f"Project config already exists: {config_path} "
+                f"(use --force to overwrite)"
             )
             return
 
@@ -121,6 +179,7 @@ class InitCommand(BaseCommand):
 
     def _update_gitignore(self) -> None:
         """Update .gitignore with meetup-scheduler patterns."""
+        assert self._project_dir is not None
         gitignore_path = self._project_dir / ".gitignore"
 
         # Read existing content
@@ -147,3 +206,54 @@ class InitCommand(BaseCommand):
                 f.write(f"{pattern}\n")
 
         self.app.log.info(f"Updated .gitignore with {len(patterns_to_add)} patterns")
+
+    def _print_success_message(self) -> None:
+        """Print a success message with helpful next steps."""
+        assert self._project_dir is not None
+
+        # Find the source directory (where meetup-scheduler is installed from)
+        # This is useful for the helpful message
+        source_dir = self._find_source_directory()
+
+        print(f"\nProject initialized at: {self._project_dir}\n")
+
+        if source_dir:
+            # Development mode - show install instructions
+            print("Next steps:")
+            print()
+            print("  If you haven't already, install meetup-scheduler for development:")
+            print(f"    uv pip install -e {source_dir}")
+            print()
+            print("  Then configure your project:")
+            print(f"    cd {self._project_dir}")
+            print('    meetup-scheduler config organizer.name "Your Name"')
+            print()
+        else:
+            # Installed mode - simpler instructions
+            print("Next steps:")
+            print()
+            print(f"    cd {self._project_dir}")
+            print('    meetup-scheduler config organizer.name "Your Name"')
+            print()
+
+    def _find_source_directory(self) -> Path | None:
+        """Try to find the meetup-scheduler source directory.
+
+        Returns:
+            Path to source directory if found and we're in dev mode, None otherwise.
+        """
+        # Check if we're running from a source checkout by looking at
+        # the module's file location
+        try:
+            import meetup_scheduler
+
+            module_path = Path(meetup_scheduler.__file__).resolve()
+            # module_path is something like .../src/meetup_scheduler/__init__.py
+            # Go up to find the repo root
+            potential_root = module_path.parent.parent.parent
+            if self._is_source_directory(potential_root):
+                return potential_root
+        except (AttributeError, IndexError):
+            pass
+
+        return None

@@ -17,19 +17,24 @@ Batch-create Meetup.com events from JSON specifications.
 uv pip install meetup-scheduler
 ```
 
-Or install from source:
+Or install from source for development:
 
 ```bash
 git clone https://github.com/terrillmoore/meetup-scheduler.git
 cd meetup-scheduler
-uv sync
+uv pip install -e .
 ```
 
 ## Quick Start
 
 ```bash
-# Initialize a new project directory
-meetup-scheduler init
+# Create and initialize a new project directory
+mkdir ~/my-meetup-project
+cd ~/my-meetup-project
+meetup-scheduler init .
+
+# Or initialize in one step from anywhere
+meetup-scheduler init ~/my-meetup-project
 
 # Configure your Meetup OAuth credentials
 meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"
@@ -49,7 +54,7 @@ meetup-scheduler schedule events.json
 
 | Command | Description |
 | ------- | ----------- |
-| `init` | Initialize project directory with skeleton files |
+| `init [PATH]` | Initialize project directory with skeleton files |
 | `config` | Get or set configuration values |
 | `sync` | Fetch group/venue data from Meetup API |
 | `schedule` | Create events from JSON file |
