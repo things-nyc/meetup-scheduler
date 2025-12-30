@@ -111,6 +111,14 @@ a local checkout.
   - Default values are applied when options are not specified
   - Option combinations and conflicts behave as expected
 
+## Command-Line Argument Parsing
+
+- Boolean command-line options must use `action=argparse.BooleanOptionalAction`
+  to allow explicit negation (e.g., `--debug` and `--no-debug`)
+- This enables users to override defaults or config file settings explicitly
+- Example: `parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction)`
+- Unit tests should verify both the positive and negated forms work correctly
+
 ## Dependency Versioning
 
 In `pyproject.toml`, all dependencies must be constrained to avoid breaking changes:

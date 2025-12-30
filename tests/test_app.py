@@ -67,8 +67,13 @@ class TestAppArgumentParsing:
         assert app.args.quiet is True
 
     def test_quiet_default(self) -> None:
-        """Test quiet defaults to False."""
+        """Test quiet defaults to None."""
         app = App(args=[])
+        assert app.args.quiet is None
+
+    def test_quiet_negated(self) -> None:
+        """Test --no-quiet explicitly sets quiet to False."""
+        app = App(args=["--no-quiet"])
         assert app.args.quiet is False
 
     def test_debug_flag(self) -> None:
@@ -77,8 +82,13 @@ class TestAppArgumentParsing:
         assert app.args.debug is True
 
     def test_debug_default(self) -> None:
-        """Test debug defaults to False."""
+        """Test debug defaults to None."""
         app = App(args=[])
+        assert app.args.debug is None
+
+    def test_debug_negated(self) -> None:
+        """Test --no-debug explicitly sets debug to False."""
+        app = App(args=["--no-debug"])
         assert app.args.debug is False
 
     def test_config_option(self) -> None:
@@ -97,8 +107,13 @@ class TestAppArgumentParsing:
         assert app.args.dry_run is True
 
     def test_dry_run_default(self) -> None:
-        """Test dry_run defaults to False."""
+        """Test dry_run defaults to None."""
         app = App(args=[])
+        assert app.args.dry_run is None
+
+    def test_dry_run_negated(self) -> None:
+        """Test --no-dry-run explicitly sets dry_run to False."""
+        app = App(args=["--no-dry-run"])
         assert app.args.dry_run is False
 
 
@@ -115,6 +130,12 @@ class TestAppCommands:
         app = App(args=["init", "--force"])
         assert app.args.command == "init"
         assert app.args.force is True
+
+    def test_init_force_negated(self) -> None:
+        """Test init --no-force option."""
+        app = App(args=["init", "--no-force"])
+        assert app.args.command == "init"
+        assert app.args.force is False
 
     def test_config_command(self) -> None:
         """Test config command is parsed."""
@@ -139,6 +160,24 @@ class TestAppCommands:
         app = App(args=["config", "--list"])
         assert app.args.command == "config"
         assert app.args.list is True
+
+    def test_config_list_negated(self) -> None:
+        """Test config --no-list option."""
+        app = App(args=["config", "--no-list"])
+        assert app.args.command == "config"
+        assert app.args.list is False
+
+    def test_config_edit_option(self) -> None:
+        """Test config --edit option."""
+        app = App(args=["config", "--edit"])
+        assert app.args.command == "config"
+        assert app.args.edit is True
+
+    def test_config_edit_negated(self) -> None:
+        """Test config --no-edit option."""
+        app = App(args=["config", "--no-edit"])
+        assert app.args.command == "config"
+        assert app.args.edit is False
 
     def test_sync_command(self) -> None:
         """Test sync command is parsed."""
@@ -167,6 +206,12 @@ class TestAppCommands:
         app = App(args=["sync", "--venues-only"])
         assert app.args.command == "sync"
         assert app.args.venues_only is True
+
+    def test_sync_venues_only_negated(self) -> None:
+        """Test sync --no-venues-only option."""
+        app = App(args=["sync", "--no-venues-only"])
+        assert app.args.command == "sync"
+        assert app.args.venues_only is False
 
     def test_schedule_command(self) -> None:
         """Test schedule command is parsed."""

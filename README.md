@@ -65,6 +65,9 @@ meetup-scheduler schedule events.json
 | `--config PATH` | Override config file location |
 | `--dry-run` | Show what would happen without making changes |
 
+Boolean options can be explicitly negated with `--no-` prefix (e.g., `--no-debug`,
+`--no-dry-run`). This is useful for overriding defaults or config file settings.
+
 ## Configuration
 
 Configuration is stored in platform-specific locations:

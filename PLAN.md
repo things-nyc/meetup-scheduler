@@ -403,10 +403,12 @@ Commands:
 
 Global Options:
   --verbose, -v     Increase verbosity (can repeat: -vv)
-  --quiet, -q       Suppress non-error output
-  --debug           Enable debug mode (show stack traces, verbose logging)
+  --quiet, -q       Suppress non-error output (--no-quiet to negate)
+  --debug           Enable debug mode (--no-debug to negate)
   --config PATH     Override config file location
-  --dry-run         Show what would happen without making changes
+  --dry-run         Show what would happen (--no-dry-run to negate)
+
+  Note: Boolean options support --no-<option> for explicit negation.
 
 init:
   meetup-scheduler init [--force]

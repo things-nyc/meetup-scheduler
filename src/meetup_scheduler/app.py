@@ -83,12 +83,12 @@ class App:
         parser.add_argument(
             "-q",
             "--quiet",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="Suppress non-error output",
         )
         parser.add_argument(
             "--debug",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="Enable debug mode (show stack traces)",
         )
         parser.add_argument(
@@ -98,7 +98,7 @@ class App:
         )
         parser.add_argument(
             "--dry-run",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="Show what would happen without making changes",
         )
 
@@ -116,7 +116,7 @@ class App:
         )
         init_parser.add_argument(
             "--force",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="Overwrite existing files",
         )
 
@@ -137,12 +137,12 @@ class App:
         )
         config_parser.add_argument(
             "--list",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="List all configuration values",
         )
         config_parser.add_argument(
             "--edit",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="Open configuration in editor",
         )
 
@@ -164,7 +164,7 @@ class App:
         )
         sync_parser.add_argument(
             "--venues-only",
-            action="store_true",
+            action=argparse.BooleanOptionalAction,
             help="Only fetch venue information",
         )
 
