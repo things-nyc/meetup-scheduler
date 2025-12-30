@@ -34,13 +34,19 @@ class App:
 
         pass
 
-    def __init__(self, args: Sequence[str] | None = None) -> None:
+    def __init__(
+        self, args: Sequence[str] | None = None, *, _testing: bool = False
+    ) -> None:
         """Initialize the application.
 
         Args:
             args: Command-line arguments. If None, uses sys.argv[1:].
+            _testing: If True, boolean options default to None instead of False.
+                This allows tests to distinguish "not specified" from "explicitly
+                set to False". Production code should use the default (False).
         """
         self._raw_args = args if args is not None else sys.argv[1:]
+        self._testing = _testing
         self._args: argparse.Namespace | None = None
         self._logger: logging.Logger | None = None
 
@@ -58,12 +64,21 @@ class App:
             self._logger = self._setup_logging()
         return self._logger
 
-    def _create_parser(self) -> argparse.ArgumentParser:
-        """Create the argument parser with all options."""
+    def _create_parser(self, *, _testing: bool = False) -> argparse.ArgumentParser:
+        """Create the argument parser with all options.
+
+        Args:
+            _testing: If True, boolean options default to None instead of False.
+                This allows tests to distinguish "not specified" from "explicitly
+                set to False". Production code should use the default (False).
+        """
         parser = argparse.ArgumentParser(
             prog="meetup-scheduler",
             description="Batch-create Meetup.com events from JSON specifications",
         )
+
+        # Default for boolean options: False in production, None in testing
+        bool_default = None if _testing else False
 
         # Version
         parser.add_argument(
@@ -84,11 +99,13 @@ class App:
             "-q",
             "--quiet",
             action=argparse.BooleanOptionalAction,
+            default=bool_default,
             help="Suppress non-error output",
         )
         parser.add_argument(
             "--debug",
             action=argparse.BooleanOptionalAction,
+            default=bool_default,
             help="Enable debug mode (show stack traces)",
         )
         parser.add_argument(
@@ -99,6 +116,7 @@ class App:
         parser.add_argument(
             "--dry-run",
             action=argparse.BooleanOptionalAction,
+            default=bool_default,
             help="Show what would happen without making changes",
         )
 
@@ -117,6 +135,7 @@ class App:
         init_parser.add_argument(
             "--force",
             action=argparse.BooleanOptionalAction,
+            default=bool_default,
             help="Overwrite existing files",
         )
 
@@ -138,11 +157,13 @@ class App:
         config_parser.add_argument(
             "--list",
             action=argparse.BooleanOptionalAction,
+            default=bool_default,
             help="List all configuration values",
         )
         config_parser.add_argument(
             "--edit",
             action=argparse.BooleanOptionalAction,
+            default=bool_default,
             help="Open configuration in editor",
         )
 
@@ -165,6 +186,7 @@ class App:
         sync_parser.add_argument(
             "--venues-only",
             action=argparse.BooleanOptionalAction,
+            default=bool_default,
             help="Only fetch venue information",
         )
 
@@ -243,7 +265,7 @@ class App:
 
     def _parse_arguments(self) -> argparse.Namespace:
         """Parse command-line arguments."""
-        parser = self._create_parser()
+        parser = self._create_parser(_testing=self._testing)
         return parser.parse_args(self._raw_args)
 
     def _setup_logging(self) -> logging.Logger:

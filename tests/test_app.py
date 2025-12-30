@@ -67,14 +67,20 @@ class TestAppArgumentParsing:
         assert app.args.quiet is True
 
     def test_quiet_default(self) -> None:
-        """Test quiet defaults to None."""
+        """Test quiet defaults to False in production mode."""
         app = App(args=[])
-        assert app.args.quiet is None
+        assert app.args.quiet is False
 
     def test_quiet_negated(self) -> None:
         """Test --no-quiet explicitly sets quiet to False."""
-        app = App(args=["--no-quiet"])
+        # Use _testing=True so default is None, allowing us to verify negation works
+        app = App(args=["--no-quiet"], _testing=True)
         assert app.args.quiet is False
+
+    def test_quiet_default_none_in_testing(self) -> None:
+        """Test quiet defaults to None in testing mode."""
+        app = App(args=[], _testing=True)
+        assert app.args.quiet is None
 
     def test_debug_flag(self) -> None:
         """Test --debug sets debug to True."""
@@ -82,14 +88,20 @@ class TestAppArgumentParsing:
         assert app.args.debug is True
 
     def test_debug_default(self) -> None:
-        """Test debug defaults to None."""
+        """Test debug defaults to False in production mode."""
         app = App(args=[])
-        assert app.args.debug is None
+        assert app.args.debug is False
 
     def test_debug_negated(self) -> None:
         """Test --no-debug explicitly sets debug to False."""
-        app = App(args=["--no-debug"])
+        # Use _testing=True so default is None, allowing us to verify negation works
+        app = App(args=["--no-debug"], _testing=True)
         assert app.args.debug is False
+
+    def test_debug_default_none_in_testing(self) -> None:
+        """Test debug defaults to None in testing mode."""
+        app = App(args=[], _testing=True)
+        assert app.args.debug is None
 
     def test_config_option(self) -> None:
         """Test --config PATH sets config path."""
@@ -107,14 +119,20 @@ class TestAppArgumentParsing:
         assert app.args.dry_run is True
 
     def test_dry_run_default(self) -> None:
-        """Test dry_run defaults to None."""
+        """Test dry_run defaults to False in production mode."""
         app = App(args=[])
-        assert app.args.dry_run is None
+        assert app.args.dry_run is False
 
     def test_dry_run_negated(self) -> None:
         """Test --no-dry-run explicitly sets dry_run to False."""
-        app = App(args=["--no-dry-run"])
+        # Use _testing=True so default is None, allowing us to verify negation works
+        app = App(args=["--no-dry-run"], _testing=True)
         assert app.args.dry_run is False
+
+    def test_dry_run_default_none_in_testing(self) -> None:
+        """Test dry_run defaults to None in testing mode."""
+        app = App(args=[], _testing=True)
+        assert app.args.dry_run is None
 
 
 class TestAppCommands:
@@ -133,8 +151,14 @@ class TestAppCommands:
 
     def test_init_force_negated(self) -> None:
         """Test init --no-force option."""
-        app = App(args=["init", "--no-force"])
+        # Use _testing=True so default is None, allowing us to verify negation works
+        app = App(args=["init", "--no-force"], _testing=True)
         assert app.args.command == "init"
+        assert app.args.force is False
+
+    def test_init_force_default(self) -> None:
+        """Test init --force defaults to False in production mode."""
+        app = App(args=["init"])
         assert app.args.force is False
 
     def test_config_command(self) -> None:
@@ -163,8 +187,14 @@ class TestAppCommands:
 
     def test_config_list_negated(self) -> None:
         """Test config --no-list option."""
-        app = App(args=["config", "--no-list"])
+        # Use _testing=True so default is None, allowing us to verify negation works
+        app = App(args=["config", "--no-list"], _testing=True)
         assert app.args.command == "config"
+        assert app.args.list is False
+
+    def test_config_list_default(self) -> None:
+        """Test config --list defaults to False in production mode."""
+        app = App(args=["config"])
         assert app.args.list is False
 
     def test_config_edit_option(self) -> None:
@@ -175,8 +205,14 @@ class TestAppCommands:
 
     def test_config_edit_negated(self) -> None:
         """Test config --no-edit option."""
-        app = App(args=["config", "--no-edit"])
+        # Use _testing=True so default is None, allowing us to verify negation works
+        app = App(args=["config", "--no-edit"], _testing=True)
         assert app.args.command == "config"
+        assert app.args.edit is False
+
+    def test_config_edit_default(self) -> None:
+        """Test config --edit defaults to False in production mode."""
+        app = App(args=["config"])
         assert app.args.edit is False
 
     def test_sync_command(self) -> None:
@@ -209,9 +245,20 @@ class TestAppCommands:
 
     def test_sync_venues_only_negated(self) -> None:
         """Test sync --no-venues-only option."""
-        app = App(args=["sync", "--no-venues-only"])
+        # Use _testing=True so default is None, allowing us to verify negation works
+        app = App(args=["sync", "--no-venues-only"], _testing=True)
         assert app.args.command == "sync"
         assert app.args.venues_only is False
+
+    def test_sync_venues_only_default(self) -> None:
+        """Test venues_only defaults to False in production mode."""
+        app = App(args=["sync"])
+        assert app.args.venues_only is False
+
+    def test_sync_venues_only_default_none_in_testing(self) -> None:
+        """Test venues_only defaults to None in testing mode."""
+        app = App(args=["sync"], _testing=True)
+        assert app.args.venues_only is None
 
     def test_schedule_command(self) -> None:
         """Test schedule command is parsed."""

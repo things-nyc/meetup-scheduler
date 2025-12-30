@@ -115,8 +115,11 @@ a local checkout.
 
 - Boolean command-line options must use `action=argparse.BooleanOptionalAction`
   to allow explicit negation (e.g., `--debug` and `--no-debug`)
+- Boolean options must specify `default=False` for production use
 - This enables users to override defaults or config file settings explicitly
-- Example: `parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction)`
+- Example: `parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=False)`
+- For unit testing negation, a `_testing=True` parameter can set defaults to None
+  to distinguish "not specified" from "explicitly set to False"
 - Unit tests should verify both the positive and negated forms work correctly
 
 ## Dependency Versioning
