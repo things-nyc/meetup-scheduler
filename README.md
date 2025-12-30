@@ -42,7 +42,7 @@ Before using meetup-scheduler, you need Meetup API credentials:
 4. Fill in the required fields:
    - **Consumer Name**: A name for your application (e.g., "My Event Scheduler")
    - **Application Website**: `https://github.com/things-nyc/meetup-scheduler`
-   - **Redirect URI**: `http://localhost:8080/callback` (for local development)
+   - **Redirect URI**: `http://127.0.0.1:8080/callback` (for local development)
 
 5. After creating, you'll receive:
    - **Key** (this is your `client_id`)
