@@ -1,0 +1,18 @@
+{
+  "defaults": {
+    "groupUrlname": "test-group",
+    "duration": "2h"
+  },
+  "events": [
+    {
+      "title": "Monthly Business Meeting",
+      "startDateTime": "2025-01-02T19:00:00-05:00",
+      "description": "Monthly business discussion"
+    },
+    {
+      "title": "Hacking Session",
+      "startDateTime": "2025-01-16T19:00:00-05:00",
+      "duration": "3h"
+    }
+  ]
+}

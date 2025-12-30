@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://meetup-scheduler/events.schema.json",
+  "$comment": "Copyright: See LICENSE.md. Author: Terry Moore",
+  "description": "Schema for meetup-scheduler event definition files",
+  "type": "object",
+  "required": ["events"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "options": {
+      "type": "object",
+      "description": "File-level scheduling options (highest priority; overrides CLI flags)",
+      "properties": {
+        "onConflict": {
+          "enum": ["error", "skip", "update", "prompt"],
+          "default": "prompt",
+          "description": "Behavior when event already exists at same time/group"
+        },
+        "seriesMode": {
+          "enum": ["link", "independent"],
+          "default": "independent",
+          "description": "Whether to link related events as a Meetup series"
+        }
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "properties": {
+        "groupUrlname": { "type": "string" },
+        "venue": { "type": "string", "description": "Venue ID or alias" },
+        "duration": { "$ref": "#/$defs/duration" },
+        "publishStatus": { "enum": ["DRAFT", "PUBLISHED"], "default": "DRAFT" },
+        "rsvpSettings": { "$ref": "#/$defs/rsvpSettings" }
+      }
+    },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/event" }
+    }
+  },
+  "$defs": {
+    "duration": {
+      "oneOf": [
+        { "type": "integer", "minimum": 1, "description": "Duration in minutes" },
+        { "type": "string", "pattern": "^(\\d+h)?(\\d+m)?$", "description": "e.g., '2h', '2h30m', '90m'" }
+      ]
+    },
+    "event": {
+      "type": "object",
+      "required": ["title", "startDateTime"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "startDateTime": { "type": "string", "format": "date-time" },
+        "duration": { "$ref": "#/$defs/duration" },
+        "groupUrlname": { "type": "string" },
+        "venue": { "type": "string", "description": "Venue ID or alias" },
+        "publishStatus": { "enum": ["DRAFT", "PUBLISHED"] },
+        "eventHosts": {
+          "type": "array",
+          "items": { "type": "string", "description": "Member ID" }
+        },
+        "featuredPhotoId": { "type": "string" },
+        "rsvpSettings": { "$ref": "#/$defs/rsvpSettings" },
+        "question": { "type": "string", "description": "RSVP question" },
+        "howToFindUs": { "type": "string" },
+        "selfRsvp": { "type": "boolean" },
+        "isOnline": { "type": "boolean" },
+        "eventUrl": { "type": "string", "format": "uri", "description": "For online events" },
+        "series": { "type": "string", "description": "Tag for grouping (e.g., 'business', 'hacking')" }
+      }
+    },
+    "rsvpSettings": {
+      "type": "object",
+      "properties": {
+        "rsvpOpenTime": { "type": "string", "format": "date-time" },
+        "rsvpCloseTime": { "type": "string", "format": "date-time" },
+        "rsvpLimit": { "type": "integer", "minimum": 0 },
+        "guestLimit": { "type": "integer", "minimum": 0, "maximum": 5 }
+      }
+    }
+  }
+}

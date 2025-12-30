@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://meetup-scheduler/config.schema.json",
+  "$comment": "Copyright: See LICENSE.md. Author: Terry Moore",
+  "description": "Schema for meetup-scheduler configuration files",
+  "type": "object",
+  "properties": {
+    "organizer": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      }
+    },
+    "groups": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/groupConfig"
+      }
+    },
+    "venueAliases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["venueId"],
+        "properties": {
+          "venueId": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "defaultTimezone": { "type": "string", "default": "America/New_York" }
+  },
+  "$defs": {
+    "groupConfig": {
+      "type": "object",
+      "properties": {
+        "urlname": { "type": "string" },
+        "defaultVenueId": { "type": "string" },
+        "defaultDuration": { "$ref": "#/$defs/duration" },
+        "series": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/seriesConfig"
+          }
+        }
+      }
+    },
+    "seriesConfig": {
+      "type": "object",
+      "properties": {
+        "pattern": { "type": "string", "description": "e.g., 'first Thursday'" },
+        "defaultDuration": { "$ref": "#/$defs/duration" },
+        "defaultVenueId": { "type": "string" },
+        "titleTemplate": { "type": "string" },
+        "descriptionTemplate": { "type": "string" }
+      }
+    },
+    "duration": {
+      "oneOf": [
+        { "type": "integer", "minimum": 1 },
+        { "type": "string", "pattern": "^(\\d+h)?(\\d+m)?$" }
+      ]
+    }
+  }
+}

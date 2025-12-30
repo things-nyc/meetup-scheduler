@@ -1,0 +1,13 @@
+{
+  "organizer": {
+    "name": "Test Organizer",
+    "email": "test@example.com"
+  },
+  "venueAliases": {
+    "test-venue": {
+      "venueId": "venue123",
+      "description": "Test Venue Location"
+    }
+  },
+  "defaultTimezone": "America/New_York"
+}
