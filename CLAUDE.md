@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 -->
+
 # Project Guidelines for Claude
 
 ## Markdown Files
@@ -6,22 +8,21 @@ All markdown files must pass `markdownlint` cleanly:
 
 1. Run `npx markdownlint <file.md>` before considering any markdown file complete
 2. Ask for user approval before adding markdownlint disable annotations
-3. When using local markdownlint annotations, use the save/restore pattern:
-
-   ```markdown
-   <!-- markdownlint-save -->
-   <!-- markdownlint-disable MD029 -->
-
-   ... content requiring exception ...
-
-   <!-- markdownlint-restore -->
-   ```
+3. When using local markdownlint annotations, use the save/restore pattern
+   with HTML comments: `markdownlint-save`, then `markdownlint-disable MDXXX`,
+   then content, then `markdownlint-restore`. Each directive goes in its own
+   HTML comment (e.g., `<` + `!-- markdownlint-save --` + `>`).
 
 4. Common rules to be aware of:
    - MD013: Line length (often disabled at file level)
    - MD029: Ordered list prefix (disable locally if continuous numbering intentional)
    - MD060: Table column spacing (use spaces around separator dashes)
    - MD022/MD032: Blank lines around headings and lists
+
+5. When documenting tool directives as examples, quote or break up the directive
+   syntax to prevent tools from interpreting example text as actual directives.
+   For example, write `<` + `!-- directive --` + `>` instead of the literal
+   HTML comment syntax.
 
 ## Code Style
 
@@ -127,6 +128,9 @@ The project uses a GNU Makefile for build automation:
 3. **Variable naming**: All project-specific variables must use a common
    project-specific prefix (e.g., `MEETUP_SCHEDULER_` for this project)
 4. **Compatibility**: Makefile should work on macOS and Windows (via git bash)
+5. **Required targets**:
+   - `clean`: Remove build artifacts (`__pycache__`, `.pytest_cache`, `*.egg-info`, etc.)
+   - `distclean`: Run `clean`, then also remove `dist/` directory and its contents
 
 Example help target format (note: Makefiles require hard tabs for indentation):
 
@@ -141,10 +145,66 @@ help:
 		"* make help      -- prints this message" \
 		"* make build     -- builds the app using uv" \
 		"* make test      -- runs pytest" \
-		"* make clean     -- removes build artifacts"
+		"* make clean     -- removes build artifacts" \
+		"* make distclean -- clean, plus removes dist/"
 ```
 
 <!-- markdownlint-restore -->
+
+## GitHub Repository Standards
+
+For projects hosted on GitHub:
+
+### GitHub Actions
+
+Set up CI workflows in `.github/workflows/` for pre-commit checks:
+
+- **Python linting**: Run `ruff check` on all Python files
+- **Markdown linting**: Run `markdownlint` on all `.md` files
+- **Unit tests**: Run `pytest` with coverage reporting
+- **Type checking**: Run `mypy` (if configured)
+
+Workflows should trigger on:
+
+- Push to `main` branch
+- Pull requests targeting `main`
+
+### Issue Tracking and Contributions
+
+- Enable GitHub Issues for bug reports and feature requests
+- Include a `CONTRIBUTING.md` with guidelines:
+  - How to report bugs
+  - How to suggest features
+  - Pull request process (fork, branch, PR)
+  - Code style requirements (reference CLAUDE.md or project docs)
+  - Requirement to pass CI checks before merge
+
+## README Structure
+
+The README.md should be user-oriented (not implementation details) and end with
+a `## Meta` section (colophon) containing:
+
+- **Contributors**: List of contributors to the project
+- **Support link**: Link to [thethings.nyc](https://thethings.nyc)
+- **Support message**: "If you find this helpful, please support The Things
+  Network New York by joining, participating, or donating."
+
+Example:
+
+```markdown
+## Meta
+
+### Contributors
+
+- [Terry Moore](https://github.com/terrillmoore)
+
+### Support
+
+This project is maintained by [The Things Network New York](https://thethings.nyc).
+
+If you find this helpful, please support The Things Network New York by
+joining, participating, or donating.
+```
 
 ## Option Priority
 
