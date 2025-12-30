@@ -52,3 +52,7 @@ htmlcov/
 .idea/
 *.swp
 *.swo
+
+# meetup-scheduler
+.meetup-scheduler/
+meetup-scheduler-local.json

@@ -206,6 +206,103 @@ class ConfigManager:
 
         return default
 
+    def set(self, key: str, value: Any, *, user_level: bool = True) -> None:
+        """Set a configuration value.
+
+        Args:
+            key: Dot-separated key path (e.g., "organizer.name").
+            value: Value to set.
+            user_level: If True, save to user config. Otherwise, save to project config.
+        """
+        if user_level:
+            config = self.load_user_config()
+            self._set_nested(config, key, value)
+            self.save_user_config(config)
+        else:
+            config = self.load_project_config()
+            self._set_nested(config, key, value)
+            self.save_project_config(config)
+
+    def unset(self, key: str, *, user_level: bool = True) -> bool:
+        """Remove a configuration value.
+
+        Args:
+            key: Dot-separated key path (e.g., "organizer.name").
+            user_level: If True, remove from user config. Otherwise, from project config.
+
+        Returns:
+            True if the key was found and removed, False otherwise.
+        """
+        if user_level:
+            config = self.load_user_config()
+            if self._unset_nested(config, key):
+                self.save_user_config(config)
+                return True
+        else:
+            config = self.load_project_config()
+            if self._unset_nested(config, key):
+                self.save_project_config(config)
+                return True
+        return False
+
+    def save_project_config(self, config: dict[str, Any]) -> None:
+        """Save project-level configuration.
+
+        Args:
+            config: Configuration dictionary to save.
+        """
+        with open(self.project_config_path, "w", encoding="utf-8") as f:
+            json.dump(config, f, indent=2)
+            f.write("\n")
+        self._project_config = config
+
+    def get_all(self, *, user_level: bool = True) -> dict[str, Any]:
+        """Get all configuration values.
+
+        Args:
+            user_level: If True, return user config. Otherwise, return project config.
+
+        Returns:
+            Configuration dictionary.
+        """
+        if user_level:
+            return self.load_user_config()
+        return self.load_project_config()
+
+    def get_merged(self) -> dict[str, Any]:
+        """Get merged configuration with project config taking priority.
+
+        Returns:
+            Merged configuration dictionary.
+        """
+        user_config = self.load_user_config()
+        project_config = self.load_project_config()
+        return self._deep_merge(user_config, project_config)
+
+    def _deep_merge(
+        self, base: dict[str, Any], override: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Deep merge two dictionaries, with override taking priority.
+
+        Args:
+            base: Base dictionary.
+            override: Dictionary with overriding values.
+
+        Returns:
+            Merged dictionary.
+        """
+        result = base.copy()
+        for key, value in override.items():
+            if (
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(value, dict)
+            ):
+                result[key] = self._deep_merge(result[key], value)
+            else:
+                result[key] = value
+        return result
+
     def _get_nested(self, data: dict[str, Any], key: str) -> Any:
         """Get a nested value from a dictionary using dot notation.
 
@@ -223,3 +320,42 @@ class ConfigManager:
                 return None
             current = current[part]
         return current
+
+    def _set_nested(self, data: dict[str, Any], key: str, value: Any) -> None:
+        """Set a nested value in a dictionary using dot notation.
+
+        Creates intermediate dictionaries as needed.
+
+        Args:
+            data: Dictionary to modify.
+            key: Dot-separated key path.
+            value: Value to set.
+        """
+        parts = key.split(".")
+        current = data
+        for part in parts[:-1]:
+            if part not in current or not isinstance(current[part], dict):
+                current[part] = {}
+            current = current[part]
+        current[parts[-1]] = value
+
+    def _unset_nested(self, data: dict[str, Any], key: str) -> bool:
+        """Remove a nested value from a dictionary using dot notation.
+
+        Args:
+            data: Dictionary to modify.
+            key: Dot-separated key path.
+
+        Returns:
+            True if the key was found and removed, False otherwise.
+        """
+        parts = key.split(".")
+        current = data
+        for part in parts[:-1]:
+            if not isinstance(current, dict) or part not in current:
+                return False
+            current = current[part]
+        if not isinstance(current, dict) or parts[-1] not in current:
+            return False
+        del current[parts[-1]]
+        return True

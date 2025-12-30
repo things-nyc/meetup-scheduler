@@ -24,6 +24,10 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 from meetup_scheduler.__version__ import __version__
+from meetup_scheduler.commands.base import CommandError
+from meetup_scheduler.commands.config_cmd import ConfigCommand
+from meetup_scheduler.commands.init_cmd import InitCommand
+from meetup_scheduler.config.manager import ConfigManager
 
 
 class App:
@@ -49,6 +53,7 @@ class App:
         self._testing = _testing
         self._args: argparse.Namespace | None = None
         self._logger: logging.Logger | None = None
+        self._config_manager: ConfigManager | None = None
 
     @property
     def args(self) -> argparse.Namespace:
@@ -63,6 +68,13 @@ class App:
         if self._logger is None:
             self._logger = self._setup_logging()
         return self._logger
+
+    @property
+    def config_manager(self) -> ConfigManager:
+        """Return the configuration manager."""
+        if self._config_manager is None:
+            self._config_manager = ConfigManager()
+        return self._config_manager
 
     def _create_parser(self, *, _testing: bool = False) -> argparse.ArgumentParser:
         """Create the argument parser with all options.
@@ -296,6 +308,15 @@ class App:
 
         return logger
 
+    # Map command names to command classes
+    COMMANDS: dict[str, type] = {
+        "init": InitCommand,
+        "config": ConfigCommand,
+        # Phase 3+: "sync": SyncCommand,
+        # Phase 4: "schedule": ScheduleCommand,
+        # Phase 5: "generate": GenerateCommand,
+    }
+
     def run(self) -> int:
         """Run the application and return exit code."""
         try:
@@ -303,17 +324,28 @@ class App:
             _ = self.args
 
             # Dispatch to command
-            command = self.args.command
+            command_name = self.args.command
 
-            if command is None:
+            if command_name is None:
                 # No command specified, show help
                 self._create_parser().print_help()
                 return 0
 
-            # Command stubs for Phase 1
-            self.log.info(f"Command '{command}' is not yet implemented")
-            return 0
+            # Look up command class
+            command_class = self.COMMANDS.get(command_name)
 
+            if command_class is None:
+                # Command not yet implemented
+                self.log.info(f"Command '{command_name}' is not yet implemented")
+                return 0
+
+            # Create and execute command
+            command = command_class(self, self.args)
+            return command.execute()
+
+        except CommandError as e:
+            self.log.error(str(e))
+            return 1
         except self.Error as e:
             self.log.error(str(e))
             return 1
