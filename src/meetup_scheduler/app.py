@@ -27,7 +27,9 @@ from meetup_scheduler.__version__ import __version__
 from meetup_scheduler.commands.base import CommandError
 from meetup_scheduler.commands.config_cmd import ConfigCommand
 from meetup_scheduler.commands.init_cmd import InitCommand
+from meetup_scheduler.commands.readme_cmd import ReadmeCommand
 from meetup_scheduler.config.manager import ConfigManager
+from meetup_scheduler.metadata import get_homepage_url
 
 
 class App:
@@ -84,9 +86,15 @@ class App:
                 This allows tests to distinguish "not specified" from "explicitly
                 set to False". Production code should use the default (False).
         """
+        # Build epilog with homepage URL if available
+        homepage = get_homepage_url()
+        epilog = f"For more information, visit: {homepage}" if homepage else None
+
         parser = argparse.ArgumentParser(
             prog="meetup-scheduler",
             description="Batch-create Meetup.com events from JSON specifications",
+            epilog=epilog,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
         )
 
         # Default for boolean options: False in production, None in testing
@@ -279,6 +287,23 @@ class App:
             help="Output file (default: stdout)",
         )
 
+        # readme command
+        readme_parser = subparsers.add_parser(
+            "readme",
+            help="Display README documentation",
+        )
+        readme_parser.add_argument(
+            "--raw",
+            action=argparse.BooleanOptionalAction,
+            default=bool_default,
+            help="Output raw markdown instead of formatted text",
+        )
+        readme_parser.add_argument(
+            "--section",
+            metavar="NAME",
+            help="Display only the specified section (e.g., oauth-setup)",
+        )
+
         return parser
 
     def _parse_arguments(self) -> argparse.Namespace:
@@ -318,6 +343,7 @@ class App:
     COMMANDS: dict[str, type] = {
         "init": InitCommand,
         "config": ConfigCommand,
+        "readme": ReadmeCommand,
         # Phase 3+: "sync": SyncCommand,
         # Phase 4: "schedule": ScheduleCommand,
         # Phase 5: "generate": GenerateCommand,

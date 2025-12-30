@@ -208,33 +208,47 @@ class InitCommand(BaseCommand):
         self.app.log.info(f"Updated .gitignore with {len(patterns_to_add)} patterns")
 
     def _print_success_message(self) -> None:
-        """Print a success message with helpful next steps."""
+        """Print a success message with helpful next steps from README."""
         assert self._project_dir is not None
 
-        # Find the source directory (where meetup-scheduler is installed from)
-        # This is useful for the helpful message
+        from rich.console import Console
+        from rich.markdown import Markdown
+        from rich.panel import Panel
+
+        from meetup_scheduler.resources.readme import ReadmeReader
+
+        console = Console()
+
+        # Print success header
+        console.print(f"\n[bold green]Project initialized at:[/bold green] {self._project_dir}\n")
+
+        # Show install instructions if running from source
         source_dir = self._find_source_directory()
-
-        print(f"\nProject initialized at: {self._project_dir}\n")
-
         if source_dir:
-            # Development mode - show install instructions
-            print("Next steps:")
-            print()
-            print("  If you haven't already, install meetup-scheduler globally:")
-            print(f"    uv tool install -e {source_dir}")
-            print()
-            print("  Then configure your project:")
-            print(f"    cd {self._project_dir}")
-            print('    meetup-scheduler config organizer.name "Your Name"')
-            print()
-        else:
-            # Installed mode - simpler instructions
-            print("Next steps:")
-            print()
-            print(f"    cd {self._project_dir}")
-            print('    meetup-scheduler config organizer.name "Your Name"')
-            print()
+            console.print(
+                f"[yellow]Tip:[/yellow] If you haven't installed meetup-scheduler globally:\n"
+                f"  uv tool install -e {source_dir}\n"
+            )
+
+        # Try to load OAuth setup instructions from README
+        try:
+            reader = ReadmeReader()
+            oauth_section = reader.get_section("oauth-setup")
+            if oauth_section:
+                panel = Panel(Markdown(oauth_section), title="OAuth Setup", border_style="blue")
+                console.print(panel)
+                console.print()
+        except ReadmeReader.Error:
+            # Fall back to basic instructions if README not available
+            console.print("[bold]Next steps:[/bold]")
+            console.print()
+            console.print("  Configure your Meetup OAuth credentials:")
+            console.print('    meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"')
+            console.print('    meetup-scheduler config oauth.client_secret "YOUR_CLIENT_SECRET"')
+            console.print()
+            console.print("  For OAuth setup instructions, run:")
+            console.print("    meetup-scheduler readme")
+            console.print()
 
     def _find_source_directory(self) -> Path | None:
         """Try to find the meetup-scheduler source directory.

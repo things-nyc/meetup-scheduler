@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meetup-scheduler"
-version = "0.1.1"
+version = "0.1.3"
 description = "Batch-create Meetup.com events from JSON specifications"
 readme = "README.md"
 license = { file = "LICENSE.md" }
@@ -46,11 +46,14 @@ dev = [
 meetup-scheduler = "meetup_scheduler.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/terrillmoore/meetup-scheduler"
-Repository = "https://github.com/terrillmoore/meetup-scheduler"
+Homepage = "https://github.com/things-nyc/meetup-scheduler"
+Repository = "https://github.com/things-nyc/meetup-scheduler"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/meetup_scheduler"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"README.md" = "meetup_scheduler/resources/README.md"
 
 [tool.ruff]
 line-length = 100

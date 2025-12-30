@@ -20,7 +20,7 @@ uv tool install meetup-scheduler
 Or install from source:
 
 ```bash
-git clone https://github.com/terrillmoore/meetup-scheduler.git
+git clone https://github.com/things-nyc/meetup-scheduler.git
 cd meetup-scheduler
 uv tool install -e .
 ```
@@ -28,18 +28,42 @@ uv tool install -e .
 If you prefer not to install globally, you can run commands from the source
 directory using `uv run meetup-scheduler` instead.
 
+## OAuth Setup
+
+<!-- meetup-scheduler:oauth-setup:start -->
+Before using meetup-scheduler, you need Meetup API credentials:
+
+1. Log in to your Meetup account at <https://www.meetup.com>
+
+2. Go to the OAuth Consumers page: <https://www.meetup.com/api/oauth/list/>
+
+3. Click "Create New Consumer" (note: requires Meetup Pro subscription)
+
+4. Fill in the required fields:
+   - **Consumer Name**: A name for your application (e.g., "My Event Scheduler")
+   - **Application Website**: `https://github.com/things-nyc/meetup-scheduler`
+   - **Redirect URI**: `http://localhost:8080/callback` (for local development)
+
+5. After creating, you'll receive:
+   - **Key** (this is your `client_id`)
+   - **Secret** (this is your `client_secret`)
+
+6. Configure meetup-scheduler with your credentials:
+
+   ```bash
+   meetup-scheduler config oauth.client_id "YOUR_KEY"
+   meetup-scheduler config oauth.client_secret "YOUR_SECRET"
+   ```
+<!-- meetup-scheduler:oauth-setup:end -->
+
 ## Quick Start
 
+<!-- meetup-scheduler:getting-started:start -->
 ```bash
-# Create and initialize a new project directory
-mkdir ~/my-meetup-project
-cd ~/my-meetup-project
+# Initialize your project directory
 meetup-scheduler init .
 
-# Or initialize in one step from anywhere
-meetup-scheduler init ~/my-meetup-project
-
-# Configure your Meetup OAuth credentials
+# Configure your Meetup OAuth credentials (see OAuth Setup above)
 meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"
 meetup-scheduler config oauth.client_secret "YOUR_CLIENT_SECRET"
 
@@ -52,6 +76,14 @@ meetup-scheduler schedule events.json --dry-run
 # Create events as drafts
 meetup-scheduler schedule events.json
 ```
+<!-- meetup-scheduler:getting-started:end -->
+
+You can also initialize a new directory in one step from anywhere:
+
+```bash
+meetup-scheduler init ~/my-meetup-project
+cd ~/my-meetup-project
+```
 
 ## Commands
 
@@ -62,6 +94,7 @@ meetup-scheduler schedule events.json
 | `sync` | Fetch group/venue data from Meetup API |
 | `schedule` | Create events from JSON file |
 | `generate` | Generate event JSON from recurrence pattern |
+| `readme` | Display this README (use `--raw` for markdown source) |
 
 ## Global Options
 

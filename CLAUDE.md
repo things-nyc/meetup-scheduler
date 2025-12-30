@@ -238,6 +238,23 @@ If you find this helpful, please support The Things Network New York by
 joining, participating, or donating.
 ```
 
+## Project URL Synchronization
+
+The project homepage URL is defined once in `pyproject.toml` under `[project.urls]`
+and must be kept in sync across all documentation:
+
+- **Source of truth**: `pyproject.toml` `[project.urls]` section
+- **Runtime access**: Use `meetup_scheduler.metadata.get_homepage_url()` to get
+  the URL at runtime (e.g., for CLI help text)
+- **README.md**: Must match the URL in `pyproject.toml` wherever it appears
+  (Installation section, OAuth Setup Application Website, etc.)
+
+When updating the project URL:
+
+1. Update `pyproject.toml` `[project.urls]` first
+2. Search README.md for any hardcoded URLs and update them
+3. Verify `meetup-scheduler --help` shows the correct URL in the epilog
+
 ## Option Priority
 
 When options can be specified from both command line and JSON files:
