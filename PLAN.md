@@ -14,9 +14,9 @@ A Python CLI tool for batch-creating Meetup.com events from JSON specifications,
 meetup-scheduler/
 ├── pyproject.toml                    # uv/pip packaging, entry points
 ├── uv.lock                           # Locked dependencies
-├── Makefile                          # Build automation
-├── README.md
-├── LICENSE
+├── Makefile                          # Build automation (GNU Make)
+├── README.md                         # User-oriented documentation
+├── LICENSE.md                        # MIT License (markdown format)
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py                   # pytest fixtures, API mocks
@@ -760,30 +760,62 @@ class TestEventParser:
 
 ---
 
-## 10. Dependencies
+## 10. Project Metadata and Dependencies
+
+### 10.1 Repository
+
+- **Hosting**: GitHub
+- **License**: MIT (see LICENSE.md)
+- **License format**: Markdown format per [IQAndreas/markdown-licenses](https://github.com/IQAndreas/markdown-licenses)
+
+### 10.2 README.md
+
+The README is oriented toward the end user (Meetup organizers), not implementation
+details. It should convey the motivation:
+
+> Setting up dozens of recurring Meetup events manually is error-prone, slow, and
+> tedious. This tool automates batch creation of Meetup events from JSON
+> specifications, with support for recurrence patterns, venue aliases, and
+> draft review before publishing.
+
+Key sections for README:
+
+- **Features**: What the tool does (batch scheduling, recurrence, drafts, etc.)
+- **Installation**: How to install via uv/pip
+- **Quick Start**: Basic usage example
+- **Configuration**: How to set up OAuth and organizer settings
+- **Usage**: Command reference (init, config, sync, schedule, generate)
+- **License**: MIT
+
+### 10.3 pyproject.toml
 
 ```toml
-# pyproject.toml
 [project]
 name = "meetup-scheduler"
 version = "0.1.0"
+description = "Batch-create Meetup.com events from JSON specifications"
+readme = "README.md"
+license = { file = "LICENSE.md" }
 requires-python = ">=3.10"
+authors = [
+    { name = "Terry Moore", email = "terry@thethings.nyc" }
+]
 dependencies = [
-    "httpx>=0.27",           # HTTP client for GraphQL
-    "jsonschema>=4.20",      # JSON Schema validation
-    "python-dateutil>=2.8",  # Date parsing and recurrence
-    "platformdirs>=4.0",     # Cross-platform config dirs
-    "rich>=13.0",            # Console output formatting
+    "httpx>=0.27, ==0.*",             # HTTP client for GraphQL
+    "jsonschema>=4.20, ==4.*",        # JSON Schema validation
+    "python-dateutil>=2.8, ==2.*",    # Date parsing and recurrence
+    "platformdirs>=4.0, ==4.*",       # Cross-platform config dirs
+    "rich>=13.0, ==13.*",             # Console output formatting
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=8.0",
-    "pytest-cov>=4.0",
-    "pytest-mock>=3.12",
-    "respx>=0.21",           # Mock httpx requests
-    "ruff>=0.3",             # Linting
-    "mypy>=1.8",             # Type checking
+    "pytest>=8.0, ==8.*",
+    "pytest-cov>=4.0, ==4.*",
+    "pytest-mock>=3.12, ==3.*",
+    "respx>=0.21, ==0.21.*",          # Mock httpx requests (pre-1.0)
+    "ruff>=0.8, ==0.8.*",             # Linting (pre-1.0)
+    "mypy>=1.8, ==1.*",               # Type checking
 ]
 
 [project.scripts]
@@ -791,10 +823,10 @@ meetup-scheduler = "meetup_scheduler.__main__:main"
 
 [tool.uv]
 dev-dependencies = [
-    "pytest>=8.0",
-    "pytest-cov>=4.0",
-    "pytest-mock>=3.12",
-    "respx>=0.21",
+    "pytest>=8.0, ==8.*",
+    "pytest-cov>=4.0, ==4.*",
+    "pytest-mock>=3.12, ==3.*",
+    "respx>=0.21, ==0.21.*",
 ]
 ```
 

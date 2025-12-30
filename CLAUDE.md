@@ -32,6 +32,63 @@ All markdown files must pass `markdownlint` cleanly:
    when installed as .whl)
 4. Reference application for style: `github.com/terrillmoore/annotate_film_scans`
 
+## File Headers
+
+All source files must have a standard header block. The format varies by file type:
+
+### Python Files
+
+```python
+##############################################################################
+#
+# Name: filename.py
+#
+# Function:
+#       Brief description of the module's purpose
+#
+# Copyright notice and license:
+#       See LICENSE.md
+#
+# Author:
+#       Terry Moore
+#
+##############################################################################
+```
+
+### Makefile
+
+```makefile
+##############################################################################
+#
+# File: Makefile
+#
+# Purpose:
+#       Brief description of the makefile's purpose
+#
+# Copyright notice and license:
+#       See LICENSE.md in this directory.
+#
+# Author:
+#       Terry Moore
+#
+# Notes:
+#       Additional notes about compatibility, requirements, etc.
+#
+##############################################################################
+```
+
+### JSON Schema Files
+
+JSON doesn't support comments, so use the `$comment` field or `description`:
+
+```json
+{
+  "$schema": "...",
+  "$comment": "Copyright: See LICENSE.md. Author: Terry Moore",
+  "description": "Schema for..."
+}
+```
+
 ## File Location Constraints
 
 **Critical**: The tool never writes files to its own installation or source
@@ -48,6 +105,46 @@ a local checkout.
 - Use `uv` for project and dependency management
 - Use `pytest` for testing with mocks for external API calls
 - All classes should have corresponding unit tests
+
+## Dependency Versioning
+
+In `pyproject.toml`, all dependencies must be constrained to avoid breaking changes:
+
+- **For packages at version 1.0+**: Use pattern `"package>=X.Y, ==X.*"`
+  - Example: `"requests>=2.28, ==2.*"`
+- **For packages before version 1.0**: Lock to current minor version
+  - Example: `"ruff>=0.8.0, ==0.8.*"`
+
+This ensures compatible updates while preventing unexpected major version changes.
+
+## Makefile Conventions
+
+The project uses a GNU Makefile for build automation:
+
+1. **Help target**: `make help` must list all targets, each on a single line
+2. **Descriptive comments**: Each target must have a comment block above it
+   explaining its purpose
+3. **Variable naming**: All project-specific variables must use a common
+   project-specific prefix (e.g., `MEETUP_SCHEDULER_` for this project)
+4. **Compatibility**: Makefile should work on macOS and Windows (via git bash)
+
+Example help target format (note: Makefiles require hard tabs for indentation):
+
+<!-- markdownlint-save -->
+<!-- markdownlint-disable MD010 -->
+
+```makefile
+help:
+	@printf "%s\n" \
+		"Available targets:" \
+		"" \
+		"* make help      -- prints this message" \
+		"* make build     -- builds the app using uv" \
+		"* make test      -- runs pytest" \
+		"* make clean     -- removes build artifacts"
+```
+
+<!-- markdownlint-restore -->
 
 ## Option Priority
 
