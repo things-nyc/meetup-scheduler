@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+
+# Claude Code cache
+.claude/
+
+# Editor settings
+.vscode/
+
+# npm package files (markdownlint installed via npx)
+package.json
+package-lock.json

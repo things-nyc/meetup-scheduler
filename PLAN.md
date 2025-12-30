@@ -802,6 +802,7 @@ dev-dependencies = [
 
 ## 11. Implementation Order
 
+<!-- markdownlint-save -->
 <!-- markdownlint-disable MD029 -->
 
 ### Phase 1: Foundation
@@ -838,7 +839,7 @@ dev-dependencies = [
 18. `GenerateCommand` - template creation
 19. Full test coverage
 
-<!-- markdownlint-enable MD029 -->
+<!-- markdownlint-restore -->
 
 ---
 
