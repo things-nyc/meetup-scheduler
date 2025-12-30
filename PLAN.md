@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD013 -->
+
 # meetup-scheduler: Detailed Implementation Plan
 
 ## Executive Summary
@@ -8,7 +10,7 @@ A Python CLI tool for batch-creating Meetup.com events from JSON specifications,
 
 ## 1. Project Structure
 
-```
+```text
 meetup-scheduler/
 ├── pyproject.toml                    # uv/pip packaging, entry points
 ├── uv.lock                           # Locked dependencies
@@ -96,7 +98,7 @@ if __name__ == "__main__":
 ### 2.2 Core Classes
 
 | Class | Responsibility |
-|-------|---------------|
+| ----- | -------------- |
 | `App` | Parse CLI args, dispatch to command classes, manage logging |
 | `ConfigManager` | Load/save user and project settings, manage paths via `platformdirs` |
 | `UserSettings` | User-level config (API credentials, defaults, organizer info) |
@@ -125,7 +127,7 @@ class BaseCommand(ABC):
 ```
 
 | Command | Description |
-|---------|-------------|
+| ------- | ----------- |
 | `InitCommand` | Set up project directory, create skeleton files |
 | `ConfigCommand` | Get/set configuration values (git-like interface) |
 | `SyncCommand` | Fetch groups/venues from Meetup, generate VS Code schemas |
@@ -139,12 +141,14 @@ class BaseCommand(ABC):
 ### 3.1 User-Level Settings (via `platformdirs`)
 
 Location: `platformdirs.user_config_dir("meetup-scheduler", "meetup-scheduler")`
+
 - Linux: `~/.config/meetup-scheduler/`
 - macOS: `~/Library/Application Support/meetup-scheduler/`
 - Windows: `%APPDATA%\meetup-scheduler\meetup-scheduler\`
 
 **Files:**
-```
+
+```text
 ~/.config/meetup-scheduler/
 ├── config.json           # User settings (organizer name, defaults)
 ├── credentials.json      # OAuth tokens (600 permissions on Unix)
@@ -155,7 +159,8 @@ Location: `platformdirs.user_config_dir("meetup-scheduler", "meetup-scheduler")`
 ### 3.2 Project-Level Settings (working directory)
 
 Created by `meetup-scheduler init`:
-```
+
+```text
 ./
 ├── .meetup-scheduler/
 │   ├── project.json      # Project-specific overrides
@@ -372,7 +377,7 @@ The `sync` command auto-generates alias suggestions from discovered venues.
 
 ## 5. CLI Interface
 
-```
+```text
 meetup-scheduler <command> [options]
 
 Commands:
@@ -437,7 +442,7 @@ generate:
 The `RecurrenceGenerator` class will support these patterns:
 
 | Pattern | Description |
-|---------|-------------|
+| ------- | ----------- |
 | `first Monday` | First Monday of each month |
 | `second Tuesday` | Second Tuesday of each month |
 | `third Wednesday` | Third Wednesday of each month |
@@ -597,7 +602,7 @@ export MEETUP_TOKEN_FILE="/path/to/token.txt"
 #### File Location Summary
 
 | File | Location | Purpose |
-|------|----------|---------|
+| ---- | -------- | ------- |
 | `config.json` | User config dir | OAuth client ID, organizer info |
 | `credentials.json` | User config dir | OAuth tokens (access, refresh) |
 | `.gitignore` | Task directory | Updated by `init` to exclude secrets |
@@ -687,7 +692,7 @@ meetup-scheduler schedule events/ttn-nyc-business-2025.json
 ### 9.1 Test Categories
 
 | Category | Coverage |
-|----------|----------|
+| -------- | -------- |
 | Unit Tests | All classes in isolation with mocked dependencies |
 | Integration Tests | Command classes with mocked Meetup API |
 | Schema Tests | JSON Schema validation edge cases |
@@ -797,7 +802,10 @@ dev-dependencies = [
 
 ## 11. Implementation Order
 
+<!-- markdownlint-disable MD029 -->
+
 ### Phase 1: Foundation
+
 1. Project scaffolding (pyproject.toml, src layout, tests/)
 2. `App` class with argument parsing
 3. `ConfigManager` with `platformdirs` integration
@@ -805,26 +813,32 @@ dev-dependencies = [
 5. `SchemaValidator` class
 
 ### Phase 2: Core Commands
+
 6. `InitCommand` - project initialization
 7. `ConfigCommand` - configuration management
 8. Unit tests for Phase 1-2
 
 ### Phase 3: Meetup Integration
+
 9. `AuthManager` - OAuth2 flow
 10. `MeetupClient` - GraphQL operations
 11. `SyncCommand` - fetch groups/venues
 12. Integration tests with mocked API
 
 ### Phase 4: Scheduling
+
 13. `EventParser` - JSON parsing, duration normalization
 14. `ScheduleCommand` - create/update events
 15. `MarkdownGenerator` - summary output
 16. End-to-end tests
 
 ### Phase 5: Template Generation
+
 17. `RecurrenceGenerator` - date pattern parsing
 18. `GenerateCommand` - template creation
 19. Full test coverage
+
+<!-- markdownlint-enable MD029 -->
 
 ---
 
