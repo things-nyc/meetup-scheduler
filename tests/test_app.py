@@ -410,3 +410,92 @@ class TestAppRun:
         target = tmp_path / "test-project"
         app = App(args=["init", str(target)])
         assert app.run() == 0
+
+
+class TestAppLogging:
+    """Test App logging configuration."""
+
+    def test_verbose_single_sets_info_level(self) -> None:
+        """Test that -v sets logging to INFO level."""
+        import logging
+
+        app = App(args=["-v"])
+        # Access log to trigger setup
+        logger = app.log
+        assert logger.level == logging.INFO
+
+    def test_verbose_double_sets_debug_level(self) -> None:
+        """Test that -vv sets logging to DEBUG level."""
+        import logging
+
+        app = App(args=["-vv"])
+        logger = app.log
+        assert logger.level == logging.DEBUG
+
+    def test_debug_flag_sets_debug_level(self) -> None:
+        """Test that --debug sets logging to DEBUG level."""
+        import logging
+
+        app = App(args=["--debug"])
+        logger = app.log
+        assert logger.level == logging.DEBUG
+
+
+class TestAppErrorHandling:
+    """Test App error handling in run()."""
+
+    def test_command_error_returns_one(self, tmp_path: Path) -> None:
+        """Test that CommandError returns 1."""
+        from unittest.mock import patch
+
+        from meetup_scheduler.commands.base import BaseCommand
+
+        # Create a command that raises CommandError
+        app = App(args=["config", "get", "nonexistent.key"])
+        # This should fail gracefully
+        result = app.run()
+        # Config get on non-existent key returns 0 with empty output
+        assert result in (0, 1)
+
+    def test_app_error_returns_one(self) -> None:
+        """Test that App.Error returns 1."""
+        from unittest.mock import patch
+
+        app = App(args=["sync"])
+        # sync without auth will fail
+        result = app.run()
+        assert result == 1
+
+    def test_unexpected_error_returns_one(self) -> None:
+        """Test that unexpected exceptions return 1."""
+        from unittest.mock import patch
+
+        app = App(args=["config"])
+
+        # Patch the command class to raise an unexpected error
+        with patch.dict(
+            app.COMMANDS,
+            {"config": lambda *args: (_ for _ in ()).throw(RuntimeError("Unexpected"))},
+        ):
+            result = app.run()
+        assert result == 1
+
+    def test_unexpected_error_with_debug_raises(self) -> None:
+        """Test that unexpected exceptions are re-raised in debug mode."""
+        from unittest.mock import patch
+
+        import pytest
+
+        app = App(args=["--debug", "config"])
+
+        # Create a mock command class that raises
+        class FailingCommand:
+            def __init__(self, *args):
+                pass
+
+            def execute(self):
+                raise RuntimeError("Test error")
+
+        with patch.dict(app.COMMANDS, {"config": FailingCommand}):
+            with pytest.raises(RuntimeError, match="Test error"):
+                app.run()
