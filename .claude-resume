@@ -49,6 +49,13 @@ Python files need this header format:
 - All .md files must pass markdownlint
 - Ask user before adding markdownlint disable annotations
 - Use save/restore pattern for local disables
+- **IMPORTANT**: When adding markdownlint-disable, MUST add comment lines
+  explaining each rule on separate lines after the disable directive:
+  ```
+  <!-- markdownlint-disable MD013 MD041 -->
+  <!-- MD013: reason for disabling -->
+  <!-- MD041: reason for disabling -->
+  ```
 
 ### Dependency Versioning
 

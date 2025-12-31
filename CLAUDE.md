@@ -1,4 +1,8 @@
-<!-- markdownlint-disable MD013 -->
+<!-- markdownlint-disable MD013 MD041 -->
+<!-- MD013: allow long lines; code examples and URLs exceed 80 chars -->
+<!-- MD041: allow non-heading first line; resume reminder must precede title -->
+
+> **IMPORTANT:** If resuming after context compression, first read `.claude-resume`
 
 # Project Guidelines for Claude
 
