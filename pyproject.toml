@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meetup-scheduler"
-version = "0.1.8"
+version = "0.1.9"
 description = "Batch-create Meetup.com events from JSON specifications"
 readme = "README.md"
 license = { file = "LICENSE.md" }
@@ -30,6 +30,7 @@ dependencies = [
     "python-dateutil>=2.8, ==2.*",
     "platformdirs>=4.0, ==4.*",
     "rich>=13.0, ==13.*",
+    "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]

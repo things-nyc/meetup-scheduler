@@ -20,6 +20,7 @@ import re
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo
 
 from meetup_scheduler.commands.base import BaseCommand
 from meetup_scheduler.scheduler.recurrence import RecurrenceGenerator
@@ -262,15 +263,32 @@ class GenerateCommand(BaseCommand):
         except ValueError:
             default_time = time(19, 0, 0)
 
+        # Get timezone from config or use America/New_York
+        tz_name = defaults.pop("defaultTimezone", None)
+        if not tz_name and self.app.config_manager:
+            tz_name = self.app.config_manager.get("defaultTimezone", default=None)
+        if not tz_name:
+            tz_name = "America/New_York"
+
+        try:
+            tz = ZoneInfo(tz_name)
+        except KeyError:
+            self.app.log.warning(
+                f"Unknown timezone '{tz_name}', using America/New_York"
+            )
+            tz = ZoneInfo("America/New_York")
+
         # Get title template
         title_template = defaults.pop("titleTemplate", "Event on {date}")
 
         # Build events list
         events: list[dict[str, Any]] = []
         for event_date in dates:
-            event_datetime = datetime.combine(event_date, default_time)
-            # Format as ISO with timezone placeholder (local)
-            datetime_str = event_datetime.strftime("%Y-%m-%dT%H:%M:%S")
+            # Create naive datetime first, then localize to get correct offset
+            naive_dt = datetime.combine(event_date, default_time)
+            aware_dt = naive_dt.replace(tzinfo=tz)
+            # Format as ISO 8601 with timezone offset
+            datetime_str = aware_dt.isoformat()
 
             # Format title
             title = title_template.format(
