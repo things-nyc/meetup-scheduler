@@ -30,6 +30,7 @@ from meetup_scheduler.commands.init_cmd import InitCommand
 from meetup_scheduler.commands.login_cmd import LoginCommand
 from meetup_scheduler.commands.logout_cmd import LogoutCommand
 from meetup_scheduler.commands.readme_cmd import ReadmeCommand
+from meetup_scheduler.commands.sync_cmd import SyncCommand
 from meetup_scheduler.config.manager import ConfigManager
 from meetup_scheduler.metadata import get_homepage_url
 
@@ -365,8 +366,8 @@ class App:
         "login": LoginCommand,
         "logout": LogoutCommand,
         "config": ConfigCommand,
+        "sync": SyncCommand,
         "readme": ReadmeCommand,
-        # Phase 3+: "sync": SyncCommand,
         # Phase 4: "schedule": ScheduleCommand,
         # Phase 5: "generate": GenerateCommand,
     }

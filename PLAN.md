@@ -40,19 +40,26 @@ meetup-scheduler/
         │   ├── __init__.py
         │   ├── base.py               # BaseCommand abstract class
         │   ├── init_cmd.py           # InitCommand class
+        │   ├── login_cmd.py          # LoginCommand class (OAuth)
+        │   ├── logout_cmd.py         # LogoutCommand class
         │   ├── config_cmd.py         # ConfigCommand class
         │   ├── sync_cmd.py           # SyncCommand class
         │   ├── schedule_cmd.py       # ScheduleCommand class
-        │   └── generate_cmd.py       # GenerateCommand class (templates)
+        │   ├── generate_cmd.py       # GenerateCommand class (templates)
+        │   └── readme_cmd.py         # ReadmeCommand class
         ├── config/
         │   ├── __init__.py
         │   ├── manager.py            # ConfigManager class
         │   ├── user_settings.py      # UserSettings class
         │   └── project_settings.py   # ProjectSettings class
+        ├── auth/                     # OAuth2 authentication
+        │   ├── __init__.py
+        │   ├── oauth.py              # OAuthFlow class (Server Flow)
+        │   ├── tokens.py             # TokenManager class
+        │   └── server.py             # CallbackServer class (local HTTP)
         ├── meetup/
         │   ├── __init__.py
         │   ├── client.py             # MeetupClient class (GraphQL)
-        │   ├── auth.py               # AuthManager class (OAuth2)
         │   └── types.py              # Event, Venue, Group dataclasses
         ├── scheduler/
         │   ├── __init__.py
@@ -103,8 +110,10 @@ if __name__ == "__main__":
 | `ConfigManager` | Load/save user and project settings, manage paths via `platformdirs` |
 | `UserSettings` | User-level config (API credentials, defaults, organizer info) |
 | `ProjectSettings` | Project directory config (groups, venues, schema overrides) |
+| `OAuthFlow` | OAuth2 Server Flow; uses env vars for client credentials |
+| `TokenManager` | Token storage, expiration tracking, automatic refresh |
+| `CallbackServer` | Local HTTP server for OAuth callback |
 | `MeetupClient` | GraphQL API calls (createEvent, editEvent, getGroup, getVenues) |
-| `AuthManager` | OAuth2 flow, token storage, refresh logic |
 | `SchemaValidator` | JSON Schema validation using `jsonschema` library |
 | `EventParser` | Parse event JSON, resolve defaults, normalize durations |
 | `RecurrenceGenerator` | Generate dates from patterns ("first Thursday", etc.) |
@@ -143,10 +152,13 @@ class BaseCommand(ABC):
 | Command | Description |
 | ------- | ----------- |
 | `InitCommand` | Set up project directory, create skeleton files |
+| `LoginCommand` | Browser-based OAuth authentication with Meetup |
+| `LogoutCommand` | Remove stored Meetup credentials |
 | `ConfigCommand` | Get/set configuration values (git-like interface) |
 | `SyncCommand` | Fetch groups/venues from Meetup, generate VS Code schemas |
 | `ScheduleCommand` | Read JSON, validate, create/update events or dry-run |
 | `GenerateCommand` | Generate event JSON from recurrence patterns |
+| `ReadmeCommand` | Display README documentation |
 
 ---
 
@@ -395,11 +407,14 @@ The `sync` command auto-generates alias suggestions from discovered venues.
 meetup-scheduler <command> [options]
 
 Commands:
+  login             Authenticate with Meetup (opens browser)
+  logout            Remove stored Meetup credentials
   init              Initialize project directory with skeleton files
   config            Get or set configuration values
   sync              Fetch group/venue data from Meetup API
   schedule          Create events from JSON file
   generate          Generate event JSON from recurrence pattern
+  readme            Display README documentation
 
 Global Options:
   --verbose, -v     Increase verbosity (can repeat: -vv)
@@ -409,6 +424,16 @@ Global Options:
   --dry-run         Show what would happen (--no-dry-run to negate)
 
   Note: Boolean options support --no-<option> for explicit negation.
+
+login:
+  meetup-scheduler login [--port PORT]
+  Opens browser for Meetup OAuth authentication.
+  Options:
+    --port PORT       Port for OAuth callback (default: 8080)
+
+logout:
+  meetup-scheduler logout
+  Removes stored Meetup credentials.
 
 init:
   meetup-scheduler init [--force]
@@ -450,6 +475,13 @@ generate:
     --end DATE        End date
     --count N         Number of occurrences (default: 12)
     --output FILE     Output file (default: stdout)
+
+readme:
+  meetup-scheduler readme [--raw] [--section NAME]
+  Display README documentation.
+  Options:
+    --raw             Output raw markdown instead of formatted text
+    --section NAME    Display only the specified section
 ```
 
 ---
@@ -548,8 +580,9 @@ query GetPastEvents($urlname: String!, $after: String) {
 
 ### 7.3 Authentication Setup
 
-Meetup requires OAuth2 authentication for API access. This section documents the
-complete setup process.
+Meetup requires OAuth2 authentication for API access. This application uses an
+**app-owned OAuth consumer** model - users authenticate via browser-based OAuth
+without needing to register their own OAuth application.
 
 **Important**: All credential and configuration files are stored in the **task
 directory** (the working directory where you run the tool) or in the user-level
@@ -557,70 +590,67 @@ config directory. The tool never writes to its own installation/source directory
 
 #### Prerequisites
 
-- A Meetup Pro subscription (required to create OAuth consumers)
+- A Meetup Pro subscription (required for API access)
 - Organizer role on at least one Meetup group
 
-#### Step 1: Create an OAuth Consumer
+#### Authentication Flow
 
-1. Log in to Meetup.com with your organizer account
-2. Navigate to your OAuth consumers page (via API settings)
-3. Click "Create OAuth Consumer"
-4. Fill in the required fields:
-   - **Consumer Name**: `meetup-scheduler` (or your preferred name)
-   - **Application Website**: Your website or repository URL
-   - **Redirect URI**: `http://localhost:8400/callback` (for local OAuth flow)
-   - **Description**: Brief description of your scheduling tool
-5. Save and note your **Client ID** and **Client Secret**
-
-#### Step 2: Configure meetup-scheduler
+The tool uses the OAuth2 Server Flow with a local callback server:
 
 ```bash
-meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"
-meetup-scheduler config oauth.client_secret "YOUR_CLIENT_SECRET"
+# Authenticate with Meetup (opens browser)
+meetup-scheduler login
 ```
 
-Configuration is stored in the user-level config directory (see Section 3.1).
+This will:
 
-#### Step 3: Authorize (First Run)
-
-When you first run a command that requires API access (e.g., `sync`), the tool will:
-
-1. Start a temporary local HTTP server on port 8400
+1. Start a temporary local HTTP server on port 8080 (configurable via `--port`)
 2. Open your default browser to Meetup's authorization page
-3. After you authorize, Meetup redirects to `localhost:8400/callback`
+3. After you authorize, Meetup redirects to `http://127.0.0.1:8080/callback`
 4. The tool captures the authorization code and exchanges it for tokens
 5. Tokens are stored in `credentials.json` in the **user-level config directory**
+
+To remove stored credentials:
+
+```bash
+meetup-scheduler logout
+```
+
+#### App-Owned OAuth Consumer
+
+The application uses pre-registered OAuth consumer credentials provided via
+environment variables. These are configured by the application maintainer:
+
+```bash
+export MEETUP_CLIENT_ID="the_app_client_id"
+export MEETUP_CLIENT_SECRET="the_app_client_secret"
+```
+
+End users do NOT need to configure these - they are built into the application
+distribution or set by the deployment environment.
 
 #### Token Management
 
 - **Access tokens** expire after 1 hour
 - **Refresh tokens** are used automatically to obtain new access tokens
 - Refresh tokens are single-use; each refresh provides a new refresh token
-- If refresh fails, the tool prompts for re-authorization
+- If refresh fails, run `meetup-scheduler login` again
 
-#### Alternative: Environment Variables
-
-For CI/CD or automated environments:
-
-```bash
-export MEETUP_SCHEDULER_ACCESS_TOKEN="your_access_token"
-# Or point to a file containing the token:
-export MEETUP_SCHEDULER_TOKEN_FILE="/path/to/token.txt"
-```
+The `TokenManager` class handles automatic token refresh with a 5-minute buffer
+before expiration.
 
 #### Security Best Practices
 
 1. Never commit credentials to version control
 2. When `init` creates a task directory, it adds credential patterns to `.gitignore`
 3. On Unix systems, `credentials.json` is created with mode 0600
-4. Use environment variables in shared/CI environments
-5. Rotate credentials periodically via Meetup's OAuth management page
+4. The app-owned OAuth consumer credentials are protected as secrets
 
 #### File Location Summary
 
 | File | Location | Purpose |
 | ---- | -------- | ------- |
-| `config.json` | User config dir | OAuth client ID, organizer info |
+| `config.json` | User config dir | Organizer info, settings |
 | `credentials.json` | User config dir | OAuth tokens (access, refresh) |
 | `.gitignore` | Task directory | Updated by `init` to exclude secrets |
 
@@ -632,32 +662,29 @@ export MEETUP_SCHEDULER_TOKEN_FILE="/path/to/token.txt"
 
 ```bash
 # Install the tool
-uv pip install meetup-scheduler
+uv tool install meetup-scheduler
 
 # Create a working directory for a scheduling project
 mkdir my-meetup-planning && cd my-meetup-planning
 
-# Initialize (creates .meetup-scheduler/, prompts for missing config)
+# Initialize (creates .meetup-scheduler/, events/, etc.)
 meetup-scheduler init
-# Output: "Missing required configuration. Please run:"
-#   meetup-scheduler config organizer.name "Your Name"
-#   meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"
-#   meetup-scheduler config oauth.client_secret "YOUR_CLIENT_SECRET"
 
-# Configure
+# Configure organizer name
 meetup-scheduler config organizer.name "Terry Moore"
-meetup-scheduler config oauth.client_id "abc123"
-meetup-scheduler config oauth.client_secret "secret456"
 
-# Sync groups and venues (triggers OAuth if needed)
+# Authenticate with Meetup (opens browser)
+meetup-scheduler login
+# Browser opens to Meetup authorization page
+# After authorizing, tokens are saved locally
+
+# Sync groups and venues
 meetup-scheduler sync
-# Output: "Authenticated as Terry Moore"
-#         "Found 3 groups you organize:"
+# Output: "Fetching groups... found 3 organized groups"
 #         "  - the-things-network-nyc-community-meetup"
 #         "  - the-things-network-ithaca-community-meetup"
 #         "  - finger-lakes-film-photography-group"
 #         "Synced 12 venues across all groups"
-#         "VS Code schemas written to .vscode/settings.json"
 ```
 
 ### 8.2 Generate Template Events
