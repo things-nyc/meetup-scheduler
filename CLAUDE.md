@@ -161,10 +161,21 @@ a local checkout.
 - Use `uv` for project and dependency management
 - Use `pytest` for testing with mocks for external API calls
 - All classes should have corresponding unit tests
-- All command-line options must have unit tests that verify:
-  - Each option is correctly parsed into the expected namespace attribute
-  - Default values are applied when options are not specified
-  - Option combinations and conflicts behave as expected
+
+## Version Bumping
+
+**Important**: When implementing new features or making significant changes,
+always bump the version number in `pyproject.toml`:
+
+- **Location**: `pyproject.toml` under `[project]` → `version`
+- **When to bump**:
+  - New commands or features: bump patch version (e.g., 0.1.6 → 0.1.7)
+  - Breaking changes: bump minor version (e.g., 0.1.7 → 0.2.0)
+  - Bug fixes only: bump patch version
+- **Commit together**: Include the version bump in the same commit as the feature
+
+The version is read at runtime from package metadata via `__version__.py`, so
+updating `pyproject.toml` is sufficient.
 
 ## Command-Line Argument Parsing
 
@@ -175,7 +186,10 @@ a local checkout.
 - Example: `parser.add_argument("--dry-run", action=argparse.BooleanOptionalAction, default=False)`
 - For unit testing negation, a `_testing=True` parameter can set defaults to None
   to distinguish "not specified" from "explicitly set to False"
-- Unit tests should verify both the positive and negated forms work correctly
+- All command-line options must have unit tests that verify:
+  - Each option is correctly parsed into the expected namespace attribute
+  - Default values are applied when options are not specified
+  - Both positive and negated forms work correctly for boolean options
 
 ## Dependency Versioning
 
