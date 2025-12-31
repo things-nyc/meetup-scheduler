@@ -2,6 +2,18 @@
 
 Read this file immediately when resuming after context compression.
 
+## Task Tracking with TodoWrite
+
+**ALWAYS use TodoWrite** to track tasks during multi-step work:
+
+1. Create a todo list at the start of any non-trivial task
+2. Mark tasks `in_progress` when starting them
+3. Mark tasks `completed` immediately when done (don't batch)
+4. Update the list as new tasks are discovered
+5. Check the todo list after context compression to see what's already done
+
+This prevents duplicate work and maintains accurate state across sessions.
+
 ## Pattern to ALWAYS Follow
 
 When adding ANY linter/type suppression (`# noqa`, `# type: ignore`,

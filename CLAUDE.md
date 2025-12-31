@@ -39,6 +39,12 @@ These are frequently forgotten rules. A pre-commit hook enforces some of these.
    git config core.hooksPath .githooks
    ```
 
+6. **Not using TodoWrite for task tracking**: For any multi-step task:
+   - Create a todo list at the start
+   - Mark tasks `in_progress` when starting, `completed` when done
+   - Update immediately (don't batch completions)
+   - Check the list after context compression to avoid redoing completed work
+
 ## Markdown Files
 
 All markdown files must pass `markdownlint` cleanly:
