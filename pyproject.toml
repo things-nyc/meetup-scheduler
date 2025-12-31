@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "meetup-scheduler"
-version = "0.1.7"
+version = "0.1.8"
 description = "Batch-create Meetup.com events from JSON specifications"
 readme = "README.md"
 license = { file = "LICENSE.md" }
@@ -37,7 +37,7 @@ dev = [
     "pytest>=8.0, ==8.*",
     "pytest-cov>=4.0, ==4.*",
     "pytest-mock>=3.12, ==3.*",
-    "respx>=0.21, ==0.21.*",
+    "respx>=0.22.0, ==0.*",
     "ruff>=0.8, ==0.8.*",
     "mypy>=1.8, ==1.*",
 ]
