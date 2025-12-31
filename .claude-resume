@@ -1,0 +1,81 @@
+# Claude Resume Checklist
+
+Read this file immediately when resuming after context compression.
+
+## Critical: Re-read These Files First
+
+1. **CLAUDE.md** - Contains all project constraints and coding standards
+2. **Plan file** (if mentioned in context) - Contains implementation details
+
+## Key Constraints (from CLAUDE.md)
+
+### Code Style
+
+- NO bare functions - all code must be methods of classes or local to a method
+- Exception: single `main()` in `__main__.py`
+- All source files MUST have standard header blocks (see CLAUDE.md for format)
+- Schemas and data files must be bundled as package resources
+
+### File Headers Required
+
+Python files need this header format:
+
+```python
+##############################################################################
+#
+# Name: filename.py
+#
+# Function:
+#       Brief description
+#
+# Copyright notice and license:
+#       See LICENSE.md
+#
+# Author:
+#       Terry Moore
+#
+##############################################################################
+```
+
+### Build and Test
+
+- Use `uv` for project/dependency management
+- Use `pytest` for testing - all classes need unit tests
+- Run `uv run ruff check src tests` before commits
+- Run `npx markdownlint <file.md>` on all markdown files
+
+### Markdown Rules
+
+- All .md files must pass markdownlint
+- Ask user before adding markdownlint disable annotations
+- Use save/restore pattern for local disables
+
+### Dependency Versioning
+
+- Packages 1.0+: Use `"package>=X.Y, ==X.*"`
+- Packages <1.0: Lock to minor version `"package>=0.X.0, ==0.X.*"`
+
+### File Locations
+
+- NEVER write to installation/source directory
+- Outputs go to: user config directory OR task directory
+
+### Option Priority
+
+- JSON file options > Command line > Defaults
+
+## Before Committing
+
+1. Run: `uv run ruff check src tests`
+2. Run: `uv run pytest`
+3. Run: `npx markdownlint` on any changed .md files
+4. Verify file headers on new files
+5. Follow commit message format with emoji and co-author
+
+## Current Project State
+
+This is the meetup-scheduler project. Key implemented features:
+- CLI with commands: init, config, login, logout, sync, schedule, generate, readme
+- OAuth authentication with Meetup API
+- Event scheduling from JSON files
+- Recurrence pattern generation
