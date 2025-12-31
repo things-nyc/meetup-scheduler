@@ -3,7 +3,26 @@
 [![Tests](https://github.com/things-nyc/meetup-scheduler/actions/workflows/test.yml/badge.svg)](https://github.com/things-nyc/meetup-scheduler/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Batch-create Meetup.com events from JSON specifications.
+If you organize a Meetup group with recurring events—monthly meetings, weekly
+workshops, quarterly socials—you know the pain of manually creating dozens of
+similar events. Each one requires clicking through the same forms, copying
+descriptions, selecting venues, and hoping you didn't fat-finger a date.
+Multiply that by several event series across multiple groups, and you've lost
+hours to repetitive busywork.
+
+**meetup-scheduler** automates this. Define your events in a JSON file, use
+patterns like "first Thursday" or "third Saturday" to generate dates, and
+batch-create them as drafts for review before publishing. What used to take
+an afternoon now takes minutes.
+
+## Who Is This For?
+
+- Community organizers running recurring meetups (user groups, hobby clubs,
+  networking events)
+- Meetup Pro subscribers managing multiple groups with similar event structures
+- Anyone tired of the Meetup web UI for scheduling more than a handful of events
+
+You'll need organizer permissions on your Meetup group(s) to create events.
 
 ## Features
 
