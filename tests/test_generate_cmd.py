@@ -429,6 +429,203 @@ class TestGenerateCommandPatterns:
         assert "invalid" in all_output.lower() or "pattern" in all_output.lower()
 
 
+class TestGenerateCommandDuration:
+    """Test generate command --duration option."""
+
+    def test_duration_option_parsed(self) -> None:
+        """Test that --duration option is parsed."""
+        app = App(args=["generate", "--duration", "120"])
+        assert app.args.duration == "120"
+
+    def test_duration_option_integer_minutes(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test duration with integer minutes."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+                "--duration", "120",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        assert output["defaults"]["duration"] == 120
+
+    def test_duration_option_hours_format(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test duration with '2h' format."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+                "--duration", "2h",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        assert output["defaults"]["duration"] == 120
+
+    def test_duration_option_minutes_format(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test duration with '90m' format."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+                "--duration", "90m",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        assert output["defaults"]["duration"] == 90
+
+    def test_duration_option_combined_format(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test duration with '1h30m' format."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+                "--duration", "1h30m",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        assert output["defaults"]["duration"] == 90
+
+
+class TestGenerateCommandTime:
+    """Test generate command --time option."""
+
+    def test_time_option_parsed(self) -> None:
+        """Test that --time option is parsed."""
+        app = App(args=["generate", "--time", "17:30"])
+        assert app.args.time == "17:30"
+
+    def test_time_option_sets_start_time(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that --time sets the start time in generated events."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+                "--time", "17:30",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        # Verify the time is in the startDateTime
+        assert "T17:30" in output["events"][0]["startDateTime"]
+
+    def test_time_option_with_seconds(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test --time with seconds format."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+                "--time", "17:30:00",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        assert "T17:30:00" in output["events"][0]["startDateTime"]
+
+
+class TestGenerateCommandCombinedOptions:
+    """Test generate command with duration and time combined."""
+
+    def test_duration_and_time_together(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test using both --duration and --time options."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+                "--duration", "2h",
+                "--time", "17:30",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        assert output["defaults"]["duration"] == 120
+        assert "T17:30" in output["events"][0]["startDateTime"]
+
+    def test_full_example_12_meetings(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test generating 12 meetings at 17:30 with 120 min duration."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "12",
+                "--duration", "120",
+                "--time", "17:30",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        assert len(output["events"]) == 12
+        assert output["defaults"]["duration"] == 120
+        for event in output["events"]:
+            assert "T17:30" in event["startDateTime"]
+
+
 class TestGenerateCommandIntegration:
     """Integration tests for generate command workflow."""
 

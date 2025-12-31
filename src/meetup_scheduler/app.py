@@ -309,6 +309,16 @@ class App:
             metavar="FILE",
             help="Output file (default: stdout)",
         )
+        generate_parser.add_argument(
+            "--duration",
+            metavar="DURATION",
+            help="Event duration (e.g., '2h', '90m', '1h30m', or minutes as integer)",
+        )
+        generate_parser.add_argument(
+            "--time",
+            metavar="TIME",
+            help="Event start time (e.g., '17:30' or '17:30:00')",
+        )
 
         # readme command
         readme_parser = subparsers.add_parser(

@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date, datetime, time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -59,6 +60,8 @@ class GenerateCommand(BaseCommand):
         end_str = getattr(self.args, "end", None)
         count = getattr(self.args, "count", 12)
         output_file = getattr(self.args, "output", None)
+        duration_str = getattr(self.args, "duration", None)
+        time_str = getattr(self.args, "time", None)
 
         # Validate required arguments
         if not pattern:
@@ -85,7 +88,7 @@ class GenerateCommand(BaseCommand):
                 raise self.Error(f"Invalid end date: {e}") from e
 
         # Get defaults from config or series
-        defaults = self._get_defaults(group_urlname, series_name)
+        defaults = self._get_defaults(group_urlname, series_name, duration_str, time_str)
 
         # Generate dates
         try:
@@ -114,6 +117,45 @@ class GenerateCommand(BaseCommand):
             print(json.dumps(output, indent=2))
 
         return 0
+
+    def _parse_duration(self, duration_str: str) -> int:
+        """Parse a duration string into minutes.
+
+        Supports formats:
+        - Integer (minutes): "120"
+        - Hours: "2h"
+        - Minutes: "90m"
+        - Combined: "1h30m", "2h15m"
+
+        Args:
+            duration_str: Duration string to parse.
+
+        Returns:
+            Duration in minutes.
+
+        Raises:
+            ValueError: If duration format is invalid.
+        """
+        duration_str = duration_str.strip().lower()
+
+        # Try integer first
+        try:
+            return int(duration_str)
+        except ValueError:
+            pass
+
+        # Try pattern matching for h/m format
+        pattern = r"^(?:(\d+)h)?(?:(\d+)m)?$"
+        match = re.match(pattern, duration_str)
+        if match and (match.group(1) or match.group(2)):
+            hours = int(match.group(1)) if match.group(1) else 0
+            minutes = int(match.group(2)) if match.group(2) else 0
+            return hours * 60 + minutes
+
+        raise ValueError(
+            f"Invalid duration format: {duration_str}. "
+            "Use integer minutes, or formats like '2h', '90m', '1h30m'."
+        )
 
     def _parse_date(self, date_str: str) -> date:
         """Parse a date string.
@@ -151,13 +193,19 @@ class GenerateCommand(BaseCommand):
         )
 
     def _get_defaults(
-        self, group_urlname: str | None, series_name: str | None
+        self,
+        group_urlname: str | None,
+        series_name: str | None,
+        duration_str: str | None,
+        time_str: str | None,
     ) -> dict[str, Any]:
         """Get defaults from config or series configuration.
 
         Args:
             group_urlname: Group URL name (overrides config).
             series_name: Series name to look up in config.
+            duration_str: Duration string from command line (overrides config).
+            time_str: Time string from command line (overrides config).
 
         Returns:
             Dictionary of default values.
@@ -181,6 +229,17 @@ class GenerateCommand(BaseCommand):
         # Command line group overrides config
         if group_urlname:
             defaults["groupUrlname"] = group_urlname
+
+        # Command line duration overrides config
+        if duration_str:
+            try:
+                defaults["duration"] = self._parse_duration(duration_str)
+            except ValueError as e:
+                raise self.Error(str(e)) from e
+
+        # Command line time overrides config
+        if time_str:
+            defaults["defaultTime"] = time_str
 
         return defaults
 
