@@ -230,23 +230,22 @@ class InitCommand(BaseCommand):
                 f"  uv tool install -e {source_dir}\n"
             )
 
-        # Try to load OAuth setup instructions from README
+        # Try to load auth setup instructions from README
         try:
             reader = ReadmeReader()
-            oauth_section = reader.get_section("oauth-setup")
-            if oauth_section:
-                panel = Panel(Markdown(oauth_section), title="OAuth Setup", border_style="blue")
+            auth_section = reader.get_section("auth-setup")
+            if auth_section:
+                panel = Panel(Markdown(auth_section), title="Next Steps", border_style="blue")
                 console.print(panel)
                 console.print()
         except ReadmeReader.Error:
             # Fall back to basic instructions if README not available
             console.print("[bold]Next steps:[/bold]")
             console.print()
-            console.print("  Configure your Meetup OAuth credentials:")
-            console.print('    meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"')
-            console.print('    meetup-scheduler config oauth.client_secret "YOUR_CLIENT_SECRET"')
+            console.print("  Log in to your Meetup account:")
+            console.print("    meetup-scheduler login")
             console.print()
-            console.print("  For OAuth setup instructions, run:")
+            console.print("  For more information, run:")
             console.print("    meetup-scheduler readme")
             console.print()
 

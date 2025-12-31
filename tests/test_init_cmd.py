@@ -426,16 +426,15 @@ class TestInitCommandOutput:
         # Check for directory name (full path may be wrapped by Rich console)
         assert "my-project" in captured.out
 
-    def test_prints_oauth_setup(
+    def test_prints_auth_setup(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        """Test that init prints OAuth setup instructions."""
+        """Test that init prints authentication instructions."""
         target_dir = tmp_path / "my-project"
 
         app = App(args=["init", str(target_dir)])
         app.run()
 
         captured = capsys.readouterr()
-        # Should show OAuth setup panel or fallback instructions
-        assert "OAuth" in captured.out or "config" in captured.out
-        assert "client_id" in captured.out or "oauth" in captured.out.lower()
+        # Should show auth setup panel or fallback instructions
+        assert "login" in captured.out or "authenticate" in captured.out.lower()

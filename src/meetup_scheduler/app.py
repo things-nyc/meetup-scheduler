@@ -27,6 +27,8 @@ from meetup_scheduler.__version__ import __version__
 from meetup_scheduler.commands.base import CommandError
 from meetup_scheduler.commands.config_cmd import ConfigCommand
 from meetup_scheduler.commands.init_cmd import InitCommand
+from meetup_scheduler.commands.login_cmd import LoginCommand
+from meetup_scheduler.commands.logout_cmd import LogoutCommand
 from meetup_scheduler.commands.readme_cmd import ReadmeCommand
 from meetup_scheduler.config.manager import ConfigManager
 from meetup_scheduler.metadata import get_homepage_url
@@ -163,6 +165,24 @@ class App:
             action=argparse.BooleanOptionalAction,
             default=bool_default,
             help="Overwrite existing files",
+        )
+
+        # login command
+        login_parser = subparsers.add_parser(
+            "login",
+            help="Authenticate with Meetup (opens browser)",
+        )
+        login_parser.add_argument(
+            "--port",
+            type=int,
+            default=8080,
+            help="Port for OAuth callback (default: 8080)",
+        )
+
+        # logout command
+        subparsers.add_parser(
+            "logout",
+            help="Remove stored Meetup credentials",
         )
 
         # config command
@@ -342,6 +362,8 @@ class App:
     # Map command names to command classes
     COMMANDS: dict[str, type] = {
         "init": InitCommand,
+        "login": LoginCommand,
+        "logout": LogoutCommand,
         "config": ConfigCommand,
         "readme": ReadmeCommand,
         # Phase 3+: "sync": SyncCommand,

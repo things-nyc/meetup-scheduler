@@ -28,33 +28,24 @@ uv tool install -e .
 If you prefer not to install globally, you can run commands from the source
 directory using `uv run meetup-scheduler` instead.
 
-## OAuth Setup
+## Authentication
 
-<!-- meetup-scheduler:oauth-setup:start -->
-Before using meetup-scheduler, you need Meetup API credentials:
+<!-- meetup-scheduler:auth-setup:start -->
+Before using meetup-scheduler, you need to authenticate with your Meetup account:
 
-1. Log in to your Meetup account at <https://www.meetup.com>
+```bash
+meetup-scheduler login
+```
 
-2. Go to the OAuth Consumers page: <https://www.meetup.com/api/oauth/list/>
+This opens your browser to log in to Meetup and grant access. Your credentials
+are stored securely and refreshed automatically.
 
-3. Click "Create New Consumer" (note: requires Meetup Pro subscription)
+To remove stored credentials:
 
-4. Fill in the required fields:
-   - **Consumer Name**: A name for your application (e.g., "My Event Scheduler")
-   - **Application Website**: `https://github.com/things-nyc/meetup-scheduler`
-   - **Redirect URI**: `http://127.0.0.1:8080/callback` (for local development)
-
-5. After creating, you'll receive:
-   - **Key** (this is your `client_id`)
-   - **Secret** (this is your `client_secret`)
-
-6. Configure meetup-scheduler with your credentials:
-
-   ```bash
-   meetup-scheduler config oauth.client_id "YOUR_KEY"
-   meetup-scheduler config oauth.client_secret "YOUR_SECRET"
-   ```
-<!-- meetup-scheduler:oauth-setup:end -->
+```bash
+meetup-scheduler logout
+```
+<!-- meetup-scheduler:auth-setup:end -->
 
 ## Quick Start
 
@@ -63,9 +54,8 @@ Before using meetup-scheduler, you need Meetup API credentials:
 # Initialize your project directory
 meetup-scheduler init .
 
-# Configure your Meetup OAuth credentials (see OAuth Setup above)
-meetup-scheduler config oauth.client_id "YOUR_CLIENT_ID"
-meetup-scheduler config oauth.client_secret "YOUR_CLIENT_SECRET"
+# Log in to your Meetup account
+meetup-scheduler login
 
 # Sync groups and venues from Meetup
 meetup-scheduler sync
@@ -89,6 +79,8 @@ cd ~/my-meetup-project
 
 | Command | Description |
 | ------- | ----------- |
+| `login` | Authenticate with Meetup (opens browser) |
+| `logout` | Remove stored Meetup credentials |
 | `init [PATH]` | Initialize project directory with skeleton files |
 | `config` | Get or set configuration values |
 | `sync` | Fetch group/venue data from Meetup API |

@@ -41,9 +41,9 @@ class TestReadmeReader:
     def test_get_section_returns_content(self) -> None:
         """Test that get_section extracts marked sections."""
         reader = ReadmeReader()
-        section = reader.get_section("oauth-setup")
+        section = reader.get_section("auth-setup")
         assert section is not None
-        assert "OAuth" in section or "oauth" in section
+        assert "login" in section or "authenticate" in section.lower()
 
     def test_get_section_returns_none_for_missing(self) -> None:
         """Test that get_section returns None for unknown sections."""
@@ -56,13 +56,13 @@ class TestReadmeReader:
         reader = ReadmeReader()
         sections = reader.get_all_sections()
         assert isinstance(sections, dict)
-        assert "oauth-setup" in sections
+        assert "auth-setup" in sections
         assert "getting-started" in sections
 
     def test_section_content_excludes_markers(self) -> None:
         """Test that extracted sections don't include marker comments."""
         reader = ReadmeReader()
-        section = reader.get_section("oauth-setup")
+        section = reader.get_section("auth-setup")
         assert section is not None
         assert "<!-- meetup-scheduler:" not in section
 
@@ -121,12 +121,12 @@ class TestReadmeCommandExecution:
 
     def test_readme_section_outputs_section(self, capsys: pytest.CaptureFixture[str]) -> None:
         """Test that --section outputs specific section."""
-        app = App(args=["readme", "--section", "oauth-setup", "--raw"])
+        app = App(args=["readme", "--section", "auth-setup", "--raw"])
         result = app.run()
 
         assert result == 0
         captured = capsys.readouterr()
-        assert "client_id" in captured.out or "OAuth" in captured.out
+        assert "login" in captured.out or "authenticate" in captured.out.lower()
 
     def test_readme_invalid_section_returns_one(
         self, capsys: pytest.CaptureFixture[str], caplog: pytest.LogCaptureFixture

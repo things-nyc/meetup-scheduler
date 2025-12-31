@@ -33,6 +33,45 @@ All markdown files must pass `markdownlint` cleanly:
    when installed as .whl)
 4. Reference application for style: `github.com/terrillmoore/annotate_film_scans`
 
+## Linter Suppression Annotations
+
+When suppressing linter warnings with annotations like `# noqa`, `# type: ignore`,
+or similar directives, always include an explanatory comment that describes:
+
+1. **What** the suppression allows (what rule is being bypassed)
+2. **Why** the suppression is necessary (justification)
+
+Format and conventions:
+
+- **Format**: `# noqa: CODE -- what is allowed; why it's needed`
+- **Separator**: Use ` -- ` (space-dash-dash-space) between the code and explanation
+- **Purpose**: Future maintainers should understand both what and why
+
+Examples:
+
+```python
+# Good: explains both what and why
+def do_GET(self) -> None:  # noqa: N802 -- allow uppercase name; override from BaseHTTPRequestHandler
+    pass
+
+value = some_call()  # type: ignore[no-untyped-call] -- allow untyped call; third-party lib lacks stubs
+
+# Bad: only explains why, not what
+def do_GET(self) -> None:  # noqa: N802 -- override from BaseHTTPRequestHandler
+    pass
+
+# Bad: no explanation at all
+def do_GET(self) -> None:  # noqa: N802
+    pass
+```
+
+This applies to all linter/type-checker suppression annotations including:
+
+- `# noqa` (ruff, flake8)
+- `# type: ignore` (mypy)
+- `# pylint: disable` (pylint)
+- `<!-- markdownlint-disable -->` (markdownlint) - use comments in surrounding text
+
 ## File Headers
 
 All source files must have a standard header block. The format varies by file type:
