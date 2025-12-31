@@ -446,9 +446,7 @@ class TestAppErrorHandling:
 
     def test_command_error_returns_one(self, tmp_path: Path) -> None:
         """Test that CommandError returns 1."""
-        from unittest.mock import patch
 
-        from meetup_scheduler.commands.base import BaseCommand
 
         # Create a command that raises CommandError
         app = App(args=["config", "get", "nonexistent.key"])
@@ -459,7 +457,6 @@ class TestAppErrorHandling:
 
     def test_app_error_returns_one(self) -> None:
         """Test that App.Error returns 1."""
-        from unittest.mock import patch
 
         app = App(args=["sync"])
         # sync without auth will fail
@@ -496,6 +493,8 @@ class TestAppErrorHandling:
             def execute(self):
                 raise RuntimeError("Test error")
 
-        with patch.dict(app.COMMANDS, {"config": FailingCommand}):
-            with pytest.raises(RuntimeError, match="Test error"):
-                app.run()
+        with (
+            patch.dict(app.COMMANDS, {"config": FailingCommand}),
+            pytest.raises(RuntimeError, match="Test error"),
+        ):
+            app.run()

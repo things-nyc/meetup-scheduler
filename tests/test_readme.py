@@ -303,13 +303,15 @@ class TestReadmeErrors:
         mock_files.joinpath.return_value.read_text.side_effect = FileNotFoundError()
 
         # Mock Path to fail
-        with patch("importlib.resources.files", return_value=mock_files):
-            with patch(
+        with (
+            patch("importlib.resources.files", return_value=mock_files),
+            patch(
                 "meetup_scheduler.resources.readme.ReadmeReader._get_readme_resource"
-            ) as mock_get:
-                mock_get.side_effect = ReadmeReader.Error(
-                    "Could not load README.md from package resources or source directory"
-                )
-                reader._content = None
-                with pytest.raises(ReadmeReader.Error, match="Could not load"):
-                    _ = reader.content
+            ) as mock_get,
+        ):
+            mock_get.side_effect = ReadmeReader.Error(
+                "Could not load README.md from package resources or source directory"
+            )
+            reader._content = None
+            with pytest.raises(ReadmeReader.Error, match="Could not load"):
+                _ = reader.content
