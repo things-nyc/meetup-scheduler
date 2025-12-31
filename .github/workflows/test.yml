@@ -1,0 +1,83 @@
+##############################################################################
+#
+# File: test.yml
+#
+# Purpose:
+#       GitHub Actions workflow to test the meetup-scheduler package
+#
+# Copyright notice and license:
+#       See LICENSE.md
+#
+# Author:
+#       Terry Moore
+#
+##############################################################################
+
+name: Test
+
+# Trigger conditions:
+# - push: runs when commits are pushed directly to main
+# - pull_request: runs when a PR targets main (regardless of source branch)
+#   This ensures all PRs are tested before merging to main
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.13", "3.14"]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run ruff check
+        run: uv run ruff check src tests
+
+      - name: Run pytest
+        run: uv run pytest --tb=short
+
+  lint-markdown:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run markdownlint
+        run: npx markdownlint "**/*.md" --ignore node_modules
+
+  lint-shell:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Run shellcheck
+        run: |
+          # Find and check all shell scripts
+          find . -name "*.sh" -o -name "pre-commit" -path "./.githooks/*" | while read -r script; do
+            echo "Checking $script"
+            shellcheck "$script"
+          done
