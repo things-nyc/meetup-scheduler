@@ -51,7 +51,6 @@ directory using `uv run meetup-scheduler` instead.
 
 ## Authentication
 
-
 Before using meetup-scheduler, you need to authenticate with your Meetup account:
 
 ```bash
@@ -67,9 +66,7 @@ To remove stored credentials:
 meetup-scheduler logout
 ```
 
-
 ## Quick Start
-
 
 ```bash
 # Initialize your project directory
@@ -87,7 +84,6 @@ meetup-scheduler schedule events.json --dry-run
 # Create events as drafts
 meetup-scheduler schedule events.json
 ```
-
 
 You can also initialize a new directory in one step from anywhere:
 
