@@ -18,8 +18,10 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from zoneinfo import ZoneInfo
 
 from meetup_scheduler.scheduler.validator import SchemaValidator, ValidationError
 
@@ -75,6 +77,9 @@ class EventParser:
 
     # Duration pattern: captures hours and/or minutes
     DURATION_PATTERN = re.compile(r"^(?:(\d+)h)?(?:(\d+)m)?$")
+
+    # Pattern to detect if datetime has a timezone offset (Z or +/-HH:MM)
+    TZ_PATTERN = re.compile(r"(Z|[+-]\d{2}:\d{2})$")
 
     class Error(Exception):
         """Exception raised for parsing errors."""
@@ -186,6 +191,15 @@ class EventParser:
             raise self.Error("Missing required field: title")
         if not start_datetime:
             raise self.Error("Missing required field: startDateTime")
+
+        # Apply timezone if datetime doesn't have one
+        if not self._has_timezone(start_datetime):
+            # Look for timezone in file defaults, then config
+            tz_name = merged.get("timezone")
+            if not tz_name and self._config:
+                tz_name = self._config.get("defaultTimezone", default=None)
+            if tz_name:
+                start_datetime = self._apply_timezone(start_datetime, tz_name)
 
         # Parse duration (default 2 hours)
         duration_raw = merged.get("duration")
@@ -331,3 +345,47 @@ class EventParser:
             Error: If file cannot be read.
         """
         return self._validator.validate_file(file_path, SchemaValidator.EVENTS_SCHEMA)
+
+    def _has_timezone(self, datetime_str: str) -> bool:
+        """Check if a datetime string has a timezone offset.
+
+        Args:
+            datetime_str: ISO 8601 datetime string.
+
+        Returns:
+            True if the string has a timezone offset (Z or +/-HH:MM).
+        """
+        return bool(self.TZ_PATTERN.search(datetime_str))
+
+    def _apply_timezone(self, datetime_str: str, tz_name: str) -> str:
+        """Apply a timezone to a naive datetime string.
+
+        Args:
+            datetime_str: ISO 8601 datetime string without timezone.
+            tz_name: IANA timezone name (e.g., "America/New_York").
+
+        Returns:
+            ISO 8601 datetime string with timezone offset.
+
+        Raises:
+            Error: If timezone name is invalid.
+        """
+        try:
+            tz = ZoneInfo(tz_name)
+        except KeyError:
+            raise self.Error(f"Unknown timezone: {tz_name}") from None
+
+        # Parse the naive datetime
+        # Try various formats
+        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%dT%H:%M"):
+            try:
+                naive_dt = datetime.strptime(datetime_str, fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            raise self.Error(f"Invalid datetime format: {datetime_str}")
+
+        # Apply timezone and format with offset
+        aware_dt = naive_dt.replace(tzinfo=tz)
+        return aware_dt.isoformat()

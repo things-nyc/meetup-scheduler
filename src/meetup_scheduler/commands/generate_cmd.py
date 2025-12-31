@@ -263,8 +263,10 @@ class GenerateCommand(BaseCommand):
         except ValueError:
             default_time = time(19, 0, 0)
 
-        # Get timezone from config or use America/New_York
-        tz_name = defaults.pop("defaultTimezone", None)
+        # Get timezone from defaults (file/series) or config, or use America/New_York
+        tz_name = defaults.pop("timezone", None)
+        if not tz_name:
+            tz_name = defaults.pop("defaultTimezone", None)  # Legacy support
         if not tz_name and self.app.config_manager:
             tz_name = self.app.config_manager.get("defaultTimezone", default=None)
         if not tz_name:
@@ -276,7 +278,11 @@ class GenerateCommand(BaseCommand):
             self.app.log.warning(
                 f"Unknown timezone '{tz_name}', using America/New_York"
             )
-            tz = ZoneInfo("America/New_York")
+            tz_name = "America/New_York"
+            tz = ZoneInfo(tz_name)
+
+        # Include timezone in output defaults so schedule command knows the timezone
+        defaults["timezone"] = tz_name
 
         # Get title template
         title_template = defaults.pop("titleTemplate", "Event on {date}")

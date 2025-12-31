@@ -30,7 +30,8 @@
         "venue": { "type": "string", "description": "Venue ID or alias" },
         "duration": { "$ref": "#/$defs/duration" },
         "publishStatus": { "enum": ["DRAFT", "PUBLISHED"], "default": "DRAFT" },
-        "rsvpSettings": { "$ref": "#/$defs/rsvpSettings" }
+        "rsvpSettings": { "$ref": "#/$defs/rsvpSettings" },
+        "timezone": { "type": "string", "description": "IANA timezone (e.g., 'America/New_York'). Applied to events without explicit timezone offset." }
       }
     },
     "events": {

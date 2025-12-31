@@ -281,6 +281,98 @@ class TestScheduleCommandValidation:
         assert result == 0  # Empty is valid, just nothing to do
 
 
+class TestScheduleCommandTimezone:
+    """Test timezone handling in schedule command."""
+
+    def test_datetime_with_explicit_timezone_used_as_is(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that datetime with explicit timezone offset is used as-is."""
+        file_path = tmp_path / "events.json"
+        data = {
+            "defaults": {"groupUrlname": "test", "timezone": "America/Chicago"},
+            "events": [
+                {
+                    "title": "Test",
+                    "startDateTime": "2025-02-01T19:00:00-05:00",
+                }
+            ],
+        }
+        file_path.write_text(json.dumps(data), encoding="utf-8")
+
+        app = App(args=["--dry-run", "schedule", str(file_path), "--output", "json"])
+        app.run()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        # Should keep the original timezone offset, not change to Chicago time
+        assert output["events"][0]["startDateTime"] == "2025-02-01T19:00:00-05:00"
+
+    def test_datetime_without_timezone_uses_file_defaults(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that datetime without timezone uses defaults.timezone from file."""
+        file_path = tmp_path / "events.json"
+        data = {
+            "defaults": {"groupUrlname": "test", "timezone": "America/New_York"},
+            "events": [
+                {
+                    "title": "Test",
+                    "startDateTime": "2025-02-01T19:00",
+                }
+            ],
+        }
+        file_path.write_text(json.dumps(data), encoding="utf-8")
+
+        app = App(args=["--dry-run", "schedule", str(file_path), "--output", "json"])
+        app.run()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        # Should add the timezone offset from defaults.timezone
+        # February in EST is -05:00
+        assert "-05:00" in output["events"][0]["startDateTime"]
+
+    def test_datetime_without_timezone_uses_config_default(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that datetime uses config defaultTimezone when not in file."""
+        from meetup_scheduler.config.manager import ConfigManager
+
+        # Patch ConfigManager.get to return our test timezone
+        original_get = ConfigManager.get
+
+        def patched_get(
+            self: ConfigManager, key: str, *, default: object = None
+        ) -> object:
+            if key == "defaultTimezone":
+                return "America/Los_Angeles"
+            return original_get(self, key, default=default)
+
+        monkeypatch.setattr(ConfigManager, "get", patched_get)
+
+        file_path = tmp_path / "events.json"
+        data = {
+            "defaults": {"groupUrlname": "test"},
+            "events": [
+                {
+                    "title": "Test",
+                    "startDateTime": "2025-02-01T19:00",
+                }
+            ],
+        }
+        file_path.write_text(json.dumps(data), encoding="utf-8")
+
+        app = App(args=["--dry-run", "schedule", str(file_path), "--output", "json"])
+        app.run()
+
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+        # Should add the timezone offset from config defaultTimezone
+        # February in PST is -08:00
+        assert "-08:00" in output["events"][0]["startDateTime"]
+
+
 class TestScheduleCommandDurations:
     """Test duration parsing in schedule command."""
 

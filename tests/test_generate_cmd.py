@@ -626,6 +626,33 @@ class TestGenerateCommandCombinedOptions:
             assert "T17:30" in event["startDateTime"]
 
 
+class TestGenerateCommandTimezone:
+    """Test generate command timezone handling in output."""
+
+    def test_default_timezone_in_output_defaults(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test that defaultTimezone is included in output defaults."""
+        app = App(
+            args=[
+                "generate",
+                "--pattern", "first Thursday",
+                "--start", "2025-01-01",
+                "--count", "1",
+            ]
+        )
+        result = app.run()
+
+        assert result == 0
+        captured = capsys.readouterr()
+        output = json.loads(captured.out)
+
+        # The defaults section should include the timezone used
+        assert "defaults" in output
+        assert "timezone" in output["defaults"]
+        assert output["defaults"]["timezone"] == "America/New_York"
+
+
 class TestGenerateCommandIntegration:
     """Integration tests for generate command workflow."""
 
