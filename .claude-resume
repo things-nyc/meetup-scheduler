@@ -2,6 +2,23 @@
 
 Read this file immediately when resuming after context compression.
 
+## Pattern to ALWAYS Follow
+
+When adding ANY linter/type suppression (`# noqa`, `# type: ignore`,
+`<!-- markdownlint-disable -->`), IMMEDIATELY add an explanatory comment:
+
+```python
+# noqa: E501 - reason why this line must be long
+# type: ignore[arg-type] - reason for ignoring type error
+```
+
+```markdown
+<!-- markdownlint-disable MD013 -->
+<!-- MD013: reason for allowing long lines -->
+```
+
+A pre-commit hook will reject commits missing these explanations.
+
 ## Critical: Re-read These Files First
 
 1. **CLAUDE.md** - Contains all project constraints and coding standards

@@ -6,6 +6,39 @@
 
 # Project Guidelines for Claude
 
+## Common Mistakes to Avoid
+
+These are frequently forgotten rules. A pre-commit hook enforces some of these.
+
+1. **Linter suppression without explanation**: When adding ANY suppression annotation,
+   ALWAYS add an explanatory comment:
+
+   - `# noqa: E501 - line contains long URL that cannot be wrapped`
+   - `# type: ignore[arg-type] - third-party library has incorrect stubs`
+   - For markdownlint, add separate comment lines after the disable:
+
+     ```markdown
+     <` + `!-- markdownlint-disable MD013 MD041 -->
+     <` + `!-- MD013: allow long lines; code examples exceed 80 chars -->
+     <` + `!-- MD041: allow non-heading first line; resume reminder needed -->
+     ```
+
+2. **Missing file headers**: All Python files need the standard header block
+   (see "File Headers" section below)
+
+3. **Bare functions**: No functions outside of classes except `main()` in `__main__.py`
+
+4. **Forgetting to run linters**: Before committing, always run:
+   - `uv run ruff check src tests`
+   - `npx markdownlint <changed-files.md>`
+   - `uv run pytest`
+
+5. **Git hooks not configured**: After cloning, run:
+
+   ```bash
+   git config core.hooksPath .githooks
+   ```
+
 ## Markdown Files
 
 All markdown files must pass `markdownlint` cleanly:
@@ -224,6 +257,7 @@ Example help target format (note: Makefiles require hard tabs for indentation):
 
 <!-- markdownlint-save -->
 <!-- markdownlint-disable MD010 -->
+<!-- MD010: Makefile examples require hard tabs for indentation -->
 
 ```makefile
 help:
