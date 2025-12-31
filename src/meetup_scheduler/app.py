@@ -26,10 +26,12 @@ if TYPE_CHECKING:
 from meetup_scheduler.__version__ import __version__
 from meetup_scheduler.commands.base import CommandError
 from meetup_scheduler.commands.config_cmd import ConfigCommand
+from meetup_scheduler.commands.generate_cmd import GenerateCommand
 from meetup_scheduler.commands.init_cmd import InitCommand
 from meetup_scheduler.commands.login_cmd import LoginCommand
 from meetup_scheduler.commands.logout_cmd import LogoutCommand
 from meetup_scheduler.commands.readme_cmd import ReadmeCommand
+from meetup_scheduler.commands.schedule_cmd import ScheduleCommand
 from meetup_scheduler.commands.sync_cmd import SyncCommand
 from meetup_scheduler.config.manager import ConfigManager
 from meetup_scheduler.metadata import get_homepage_url
@@ -374,8 +376,8 @@ class App:
         "config": ConfigCommand,
         "sync": SyncCommand,
         "readme": ReadmeCommand,
-        # Phase 4: "schedule": ScheduleCommand,
-        # Phase 5: "generate": GenerateCommand,
+        "schedule": ScheduleCommand,
+        "generate": GenerateCommand,
     }
 
     def run(self) -> int:

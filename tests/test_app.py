@@ -400,19 +400,6 @@ class TestAppRun:
         app = App(args=[])
         assert app.run() == 0
 
-    def test_stub_command_returns_zero(self) -> None:
-        """Test that stub commands return 0."""
-        # Use schedule which is still a stub command
-        app = App(args=["schedule"])
-        assert app.run() == 0
-
-    def test_all_stub_commands_return_zero(self) -> None:
-        """Test all stub commands return 0."""
-        # Only include commands that are still stubs (not yet implemented)
-        for cmd in ["schedule", "generate"]:
-            app = App(args=[cmd])
-            assert app.run() == 0, f"Command '{cmd}' should return 0"
-
     def test_config_command_returns_zero(self) -> None:
         """Test that config command returns 0."""
         app = App(args=["config"])
