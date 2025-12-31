@@ -1,0 +1,11 @@
+title: meetup-scheduler
+description: Batch-create Meetup.com events from JSON specifications
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+
+# Repository links (used by Cayman theme)
+repository: things-nyc/meetup-scheduler
+
+# Custom domain
+url: https://meetup-scheduler.app.thethings.nyc

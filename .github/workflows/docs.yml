@@ -1,0 +1,59 @@
+name: Update Documentation
+
+on:
+  push:
+    branches: [main]
+    paths: [README.md]
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update docs/index.md from README.md
+        run: |
+          # Create index.md with front matter and links header
+          cat > docs/index.md << 'FRONTMATTER'
+          ---
+          layout: default
+          title: Home
+          ---
+
+          <!-- markdownlint-disable MD013 MD025 MD033 -->
+          <!-- MD013: allow long lines; URLs and tables exceed 80 chars -->
+          <!-- MD025: allow multiple H1; Cayman theme adds title as H1, content has another -->
+          <!-- MD033: allow inline HTML; navigation links use HTML for centering -->
+
+          <p align="center">
+            <a href="https://github.com/things-nyc/meetup-scheduler/releases/latest">Latest Release</a> •
+            <a href="https://github.com/things-nyc/meetup-scheduler/issues/new">Report Issue</a> •
+            <a href="https://github.com/things-nyc/meetup-scheduler">GitHub Repository</a>
+          </p>
+
+          ---
+
+          FRONTMATTER
+
+          # Append README content, removing the HTML marker comments
+          sed 's/<!-- meetup-scheduler:[^>]*-->//g' README.md >> docs/index.md
+
+          # Fix the LICENSE.md link to point to GitHub
+          sed -i 's|\[LICENSE.md\](LICENSE.md)|[LICENSE.md](https://github.com/things-nyc/meetup-scheduler/blob/main/LICENSE.md)|g' docs/index.md
+
+      - name: Check for changes
+        id: changes
+        run: |
+          git diff --quiet docs/index.md || echo "changed=true" >> $GITHUB_OUTPUT
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.md
+          git commit -m "docs: sync README to docs site"
+          git push

@@ -46,8 +46,10 @@ dev = [
 meetup-scheduler = "meetup_scheduler.__main__:main"
 
 [project.urls]
-Homepage = "https://github.com/things-nyc/meetup-scheduler"
+Homepage = "https://meetup-scheduler.app.thethings.nyc"
+Documentation = "https://meetup-scheduler.app.thethings.nyc"
 Repository = "https://github.com/things-nyc/meetup-scheduler"
+Issues = "https://github.com/things-nyc/meetup-scheduler/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/meetup_scheduler"]

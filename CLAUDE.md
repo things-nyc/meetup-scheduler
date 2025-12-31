@@ -70,7 +70,23 @@ This applies to all linter/type-checker suppression annotations including:
 - `# noqa` (ruff, flake8)
 - `# type: ignore` (mypy)
 - `# pylint: disable` (pylint)
-- `<!-- markdownlint-disable -->` (markdownlint) - use comments in surrounding text
+- `<` + `!-- markdownlint-disable -->` (markdownlint) - see below
+
+### Markdown Linting Annotations
+
+For markdownlint, place the disable directive on its own line, followed by
+separate comment lines explaining each rule:
+
+```markdown
+<` + `!-- markdownlint-disable MD013 MD025 MD033 -->
+<` + `!-- MD013: allow long lines; URLs and tables exceed 80 chars -->
+<` + `!-- MD025: allow multiple H1; theme adds title as H1, content has another -->
+<` + `!-- MD033: allow inline HTML; navigation links use HTML for centering -->
+```
+
+Note: When documenting markdownlint directives in CLAUDE.md or other instruction
+files, break up the HTML comment syntax (e.g., `<` + `!--`) to prevent tools
+from interpreting examples as actual directives
 
 ## File Headers
 
