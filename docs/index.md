@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Home
+title: meetup-scheduler
 ---
 
 <!-- markdownlint-disable MD013 MD025 MD033 -->
