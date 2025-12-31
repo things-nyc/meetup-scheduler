@@ -14,14 +14,12 @@ title: meetup-scheduler
   <a href="https://github.com/things-nyc/meetup-scheduler">GitHub Repository</a>
 </p>
 
-<p align="center">
-  <a href="https://github.com/things-nyc/meetup-scheduler/actions/workflows/test.yml"><img src="https://github.com/things-nyc/meetup-scheduler/actions/workflows/test.yml/badge.svg" alt="Tests"></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-</p>
-
 ---
 
 # meetup-scheduler
+
+[![Tests](https://github.com/things-nyc/meetup-scheduler/actions/workflows/test.yml/badge.svg)](https://github.com/things-nyc/meetup-scheduler/actions/workflows/test.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Batch-create Meetup.com events from JSON specifications.
 
@@ -53,6 +51,7 @@ directory using `uv run meetup-scheduler` instead.
 
 ## Authentication
 
+
 Before using meetup-scheduler, you need to authenticate with your Meetup account:
 
 ```bash
@@ -68,7 +67,9 @@ To remove stored credentials:
 meetup-scheduler logout
 ```
 
+
 ## Quick Start
+
 
 ```bash
 # Initialize your project directory
@@ -86,6 +87,7 @@ meetup-scheduler schedule events.json --dry-run
 # Create events as drafts
 meetup-scheduler schedule events.json
 ```
+
 
 You can also initialize a new directory in one step from anywhere:
 
