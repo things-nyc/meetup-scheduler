@@ -320,6 +320,12 @@ class App:
             help="Output raw markdown instead of formatted text",
         )
         readme_parser.add_argument(
+            "--pager",
+            action=argparse.BooleanOptionalAction,
+            default=True if not _testing else bool_default,
+            help="Use pager for long output (default: enabled)",
+        )
+        readme_parser.add_argument(
             "--section",
             metavar="NAME",
             help="Display only the specified section (e.g., oauth-setup)",

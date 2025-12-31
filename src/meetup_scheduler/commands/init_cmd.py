@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import json
+from importlib import resources
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -31,17 +32,28 @@ class InitCommand(BaseCommand):
     """Initialize a project directory for meetup-scheduler.
 
     Creates the following structure:
-    - .meetup-scheduler/         Project cache directory
+    - .meetup-scheduler/         Project directory
     - .meetup-scheduler/cache/   API response cache
+    - .meetup-scheduler/schemas/ JSON schemas for validation
+    - .vscode/settings.json      VS Code JSON schema associations
     - meetup-scheduler-local.json   Project configuration file
     - events/                    Directory for event JSON files
     - Updates .gitignore with appropriate patterns
     """
 
     # Files and directories to create
-    CACHE_DIR = ".meetup-scheduler"
+    PROJECT_DIR = ".meetup-scheduler"
     CACHE_SUBDIR = "cache"
+    SCHEMAS_SUBDIR = "schemas"
+    VSCODE_DIR = ".vscode"
     EVENTS_DIR = "events"
+
+    # Schema files to copy from package resources
+    SCHEMA_FILES = [
+        "config.schema.json",
+        "events.schema.json",
+        "venues.schema.json",
+    ]
 
     # Patterns to add to .gitignore
     GITIGNORE_PATTERNS = [
@@ -50,13 +62,27 @@ class InitCommand(BaseCommand):
         "meetup-scheduler-local.json",
     ]
 
-    # Default project config template
+    # Default project config template (schema path updated in _create_project_config)
     DEFAULT_PROJECT_CONFIG = {
-        "$schema": "./node_modules/meetup-scheduler/schemas/config.schema.json",
+        "$schema": "./.meetup-scheduler/schemas/config.schema.json",
         "defaults": {
             "publishStatus": "DRAFT",
         },
         "venueAliases": {},
+    }
+
+    # VS Code settings for JSON schema associations
+    VSCODE_SETTINGS = {
+        "json.schemas": [
+            {
+                "fileMatch": ["meetup-scheduler-local.json"],
+                "url": "./.meetup-scheduler/schemas/config.schema.json",
+            },
+            {
+                "fileMatch": ["events/*.json"],
+                "url": "./.meetup-scheduler/schemas/events.schema.json",
+            },
+        ]
     }
 
     def __init__(self, app: App, args: argparse.Namespace) -> None:
@@ -96,6 +122,12 @@ class InitCommand(BaseCommand):
 
         # Create directories
         self._create_directories()
+
+        # Copy schemas from package resources
+        self._copy_schemas(force=force)
+
+        # Create .vscode/settings.json
+        self._create_vscode_settings(force=force)
 
         # Create project config file
         self._create_project_config(force=force)
@@ -146,14 +178,107 @@ class InitCommand(BaseCommand):
         assert self._project_dir is not None
 
         # Create .meetup-scheduler/cache/
-        cache_dir = self._project_dir / self.CACHE_DIR / self.CACHE_SUBDIR
+        cache_dir = self._project_dir / self.PROJECT_DIR / self.CACHE_SUBDIR
         cache_dir.mkdir(parents=True, exist_ok=True)
         self.app.log.debug(f"Created cache directory: {cache_dir}")
+
+        # Create .meetup-scheduler/schemas/
+        schemas_dir = self._project_dir / self.PROJECT_DIR / self.SCHEMAS_SUBDIR
+        schemas_dir.mkdir(parents=True, exist_ok=True)
+        self.app.log.debug(f"Created schemas directory: {schemas_dir}")
+
+        # Create .vscode/
+        vscode_dir = self._project_dir / self.VSCODE_DIR
+        vscode_dir.mkdir(exist_ok=True)
+        self.app.log.debug(f"Created .vscode directory: {vscode_dir}")
 
         # Create events/
         events_dir = self._project_dir / self.EVENTS_DIR
         events_dir.mkdir(exist_ok=True)
         self.app.log.debug(f"Created events directory: {events_dir}")
+
+    def _copy_schemas(self, *, force: bool = False) -> None:
+        """Copy JSON schemas from package resources to project directory.
+
+        Args:
+            force: If True, overwrite existing schema files.
+        """
+        assert self._project_dir is not None
+        schemas_dir = self._project_dir / self.PROJECT_DIR / self.SCHEMAS_SUBDIR
+
+        # Get the schemas from package resources
+        schema_package = resources.files("meetup_scheduler.resources.schemas")
+
+        for schema_name in self.SCHEMA_FILES:
+            dest_path = schemas_dir / schema_name
+
+            if dest_path.exists() and not force:
+                self.app.log.debug(f"Schema already exists: {dest_path}")
+                continue
+
+            # Read schema from package resources
+            schema_file = schema_package.joinpath(schema_name)
+            schema_content = schema_file.read_text(encoding="utf-8")
+
+            # Write to project directory
+            dest_path.write_text(schema_content, encoding="utf-8")
+            self.app.log.debug(f"Copied schema: {schema_name}")
+
+        self.app.log.info(f"Copied {len(self.SCHEMA_FILES)} schema files")
+
+    def _create_vscode_settings(self, *, force: bool = False) -> None:
+        """Create .vscode/settings.json with JSON schema associations.
+
+        Args:
+            force: If True, overwrite existing settings.
+        """
+        assert self._project_dir is not None
+        settings_path = self._project_dir / self.VSCODE_DIR / "settings.json"
+
+        if settings_path.exists() and not force:
+            # Merge our settings with existing
+            try:
+                existing = json.loads(settings_path.read_text(encoding="utf-8"))
+                # Check if our schemas are already configured
+                existing_schemas = existing.get("json.schemas", [])
+                our_schemas = self.VSCODE_SETTINGS["json.schemas"]
+
+                # Simple check: if any of our fileMatches are present, skip
+                existing_file_matches = set()
+                for schema in existing_schemas:
+                    existing_file_matches.update(schema.get("fileMatch", []))
+
+                needs_update = False
+                for schema in our_schemas:
+                    for pattern in schema.get("fileMatch", []):
+                        if pattern not in existing_file_matches:
+                            needs_update = True
+                            existing_schemas.append(schema)
+                            break
+
+                if needs_update:
+                    existing["json.schemas"] = existing_schemas
+                    with open(settings_path, "w", encoding="utf-8") as f:
+                        json.dump(existing, f, indent=2)
+                        f.write("\n")
+                    self.app.log.info("Updated .vscode/settings.json with schema associations")
+                else:
+                    self.app.log.debug(".vscode/settings.json already has schema associations")
+                return
+            except (json.JSONDecodeError, KeyError):
+                # If we can't parse existing, only overwrite with force
+                self.app.log.info(
+                    ".vscode/settings.json exists but couldn't merge "
+                    "(use --force to overwrite)"
+                )
+                return
+
+        # Create new settings file
+        with open(settings_path, "w", encoding="utf-8") as f:
+            json.dump(self.VSCODE_SETTINGS, f, indent=2)
+            f.write("\n")
+
+        self.app.log.info("Created .vscode/settings.json with schema associations")
 
     def _create_project_config(self, *, force: bool = False) -> None:
         """Create the project configuration file.

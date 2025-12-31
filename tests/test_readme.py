@@ -97,6 +97,23 @@ class TestReadmeCommand:
         app = App(args=["readme"])
         assert app.args.section is None
 
+    def test_readme_pager_option(self) -> None:
+        """Test readme --pager option."""
+        app = App(args=["readme", "--pager"])
+        assert app.args.command == "readme"
+        assert app.args.pager is True
+
+    def test_readme_no_pager_option(self) -> None:
+        """Test readme --no-pager option."""
+        app = App(args=["readme", "--no-pager"])
+        assert app.args.command == "readme"
+        assert app.args.pager is False
+
+    def test_readme_pager_default(self) -> None:
+        """Test readme --pager defaults to True."""
+        app = App(args=["readme"])
+        assert app.args.pager is True
+
 
 class TestReadmeCommandExecution:
     """Test readme command execution."""

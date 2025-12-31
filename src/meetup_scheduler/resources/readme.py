@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rich.console import Console
+    from rich.markdown import Markdown
 
 
 class ReadmeReader:
@@ -132,27 +133,130 @@ class ReadmeReader:
         """Print the README as raw markdown to stdout."""
         print(self.content)
 
-    def print_formatted(self, console: Console | None = None) -> None:
+    def _simple_pager(self, text: str) -> None:
+        """A simple cross-platform pager that handles UTF-8 correctly.
+
+        Python's pydoc.pager() on Windows uses backslashreplace encoding
+        which converts Unicode characters to \\uXXXX escape sequences.
+        This pager avoids that issue by using Python's print() directly.
+        """
+        import shutil
+
+        # Get terminal size
+        try:
+            terminal_size = shutil.get_terminal_size()
+            lines_per_page = terminal_size.lines - 1  # Leave room for prompt
+        except (ValueError, OSError):
+            lines_per_page = 24  # Fallback default
+
+        lines = text.splitlines()
+        total_lines = len(lines)
+        current_line = 0
+
+        while current_line < total_lines:
+            # Print a page worth of lines
+            page_end = min(current_line + lines_per_page, total_lines)
+            for line in lines[current_line:page_end]:
+                print(line)
+
+            current_line = page_end
+
+            if current_line < total_lines:
+                # More content available - prompt user
+                try:
+                    response = input("-- More (Enter=next page, q=quit) --")
+                    # Clear the prompt line by overwriting with spaces
+                    print(f"\r{' ' * 40}\r", end="")
+                    if response.lower() == "q":
+                        break
+                except (KeyboardInterrupt, EOFError):
+                    print()
+                    break
+
+    def _create_left_justified_markdown(self, content: str) -> Markdown:
+        """Create a Markdown object with left-justified headings.
+
+        Rich's default Markdown rendering centers headings, which can look
+        odd in terminal output. This method creates a custom Markdown that
+        left-justifies all content including headings.
+
+        Args:
+            content: The markdown content to render.
+
+        Returns:
+            A Markdown object configured for left-justified output.
+        """
+        from rich import box
+        from rich.markdown import Heading, Markdown
+        from rich.panel import Panel
+        from rich.text import Text
+
+        # Create a custom Heading subclass that left-justifies
+        class LeftHeading(Heading):
+            """Heading that renders left-justified instead of centered."""
+
+            def __rich_console__(self, console, options):  # type: ignore[no-untyped-def]
+                text = self.text
+                text.justify = "left"
+                if self.tag == "h1":
+                    # Draw a border around h1s, but left-align content
+                    yield Panel(
+                        text,
+                        box=box.HEAVY,
+                        style="markdown.h1.border",
+                    )
+                else:
+                    if self.tag == "h2":
+                        yield Text("")
+                    yield text
+
+        # Create markdown and replace heading element type
+        md = Markdown(content, justify="left")
+        md.elements["heading_open"] = LeftHeading
+        return md
+
+    def print_formatted(
+        self, console: Console | None = None, *, pager: bool = False
+    ) -> None:
         """Print the README with rich markdown formatting.
+
+        Uses left-justified headings for better readability in terminals.
 
         Args:
             console: Rich Console instance. If None, creates a new one.
+            pager: If True, use system pager for long output.
         """
+        from io import StringIO
+
         from rich.console import Console
-        from rich.markdown import Markdown
 
-        if console is None:
-            console = Console()
+        md = self._create_left_justified_markdown(self.content)
 
-        md = Markdown(self.content)
-        console.print(md)
+        if pager:
+            # Render to string first, then use our simple pager
+            # This avoids encoding issues with system pagers on Windows
+            string_io = StringIO()
+            render_console = Console(file=string_io, force_terminal=True)
+            render_console.print(md)
+            output = string_io.getvalue()
 
-    def print_section(self, section_name: str, *, raw: bool = False) -> bool:
+            self._simple_pager(output)
+        else:
+            if console is None:
+                console = Console()
+            console.print(md)
+
+    def print_section(
+        self, section_name: str, *, raw: bool = False, pager: bool = False
+    ) -> bool:
         """Print a specific section from the README.
+
+        Uses left-justified headings for better readability in terminals.
 
         Args:
             section_name: Name of the section to print.
             raw: If True, print as raw markdown. If False, use rich formatting.
+            pager: If True, use system pager for long output.
 
         Returns:
             True if section was found and printed, False otherwise.
@@ -164,11 +268,23 @@ class ReadmeReader:
         if raw:
             print(section)
         else:
-            from rich.console import Console
-            from rich.markdown import Markdown
+            from io import StringIO
 
-            console = Console()
-            md = Markdown(section)
-            console.print(md)
+            from rich.console import Console
+
+            md = self._create_left_justified_markdown(section)
+
+            if pager:
+                # Render to string first, then use our simple pager
+                # This avoids encoding issues with system pagers on Windows
+                string_io = StringIO()
+                render_console = Console(file=string_io, force_terminal=True)
+                render_console.print(md)
+                output = string_io.getvalue()
+
+                self._simple_pager(output)
+            else:
+                console = Console()
+                console.print(md)
 
         return True

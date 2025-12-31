@@ -56,3 +56,4 @@ htmlcov/
 # meetup-scheduler
 .meetup-scheduler/
 meetup-scheduler-local.json
+tmp/

@@ -438,3 +438,143 @@ class TestInitCommandOutput:
         captured = capsys.readouterr()
         # Should show auth setup panel or fallback instructions
         assert "login" in captured.out or "authenticate" in captured.out.lower()
+
+
+class TestInitCommandSchemas:
+    """Test InitCommand schema copying."""
+
+    def test_creates_schemas_directory(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init creates .meetup-scheduler/schemas directory."""
+        monkeypatch.chdir(tmp_path)
+        app = App(args=["init"])
+        result = app.run()
+
+        assert result == 0
+        assert (tmp_path / ".meetup-scheduler" / "schemas").is_dir()
+
+    def test_copies_all_schemas(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init copies all schema files."""
+        monkeypatch.chdir(tmp_path)
+        app = App(args=["init"])
+        result = app.run()
+
+        assert result == 0
+        schemas_dir = tmp_path / ".meetup-scheduler" / "schemas"
+        assert (schemas_dir / "config.schema.json").exists()
+        assert (schemas_dir / "events.schema.json").exists()
+        assert (schemas_dir / "venues.schema.json").exists()
+
+    def test_schemas_are_valid_json(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that copied schema files are valid JSON."""
+        monkeypatch.chdir(tmp_path)
+        app = App(args=["init"])
+        app.run()
+
+        schemas_dir = tmp_path / ".meetup-scheduler" / "schemas"
+        for schema_file in schemas_dir.glob("*.json"):
+            content = json.loads(schema_file.read_text(encoding="utf-8"))
+            assert "$schema" in content or "type" in content
+
+    def test_project_config_references_local_schema(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that project config $schema points to local schema."""
+        monkeypatch.chdir(tmp_path)
+        app = App(args=["init"])
+        app.run()
+
+        config_path = tmp_path / "meetup-scheduler-local.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+
+        assert "$schema" in config
+        assert ".meetup-scheduler/schemas/config.schema.json" in config["$schema"]
+
+
+class TestInitCommandVSCode:
+    """Test InitCommand VS Code settings creation."""
+
+    def test_creates_vscode_directory(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init creates .vscode directory."""
+        monkeypatch.chdir(tmp_path)
+        app = App(args=["init"])
+        result = app.run()
+
+        assert result == 0
+        assert (tmp_path / ".vscode").is_dir()
+
+    def test_creates_vscode_settings(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init creates .vscode/settings.json."""
+        monkeypatch.chdir(tmp_path)
+        app = App(args=["init"])
+        result = app.run()
+
+        assert result == 0
+        assert (tmp_path / ".vscode" / "settings.json").exists()
+
+    def test_vscode_settings_has_schema_associations(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that .vscode/settings.json has JSON schema associations."""
+        monkeypatch.chdir(tmp_path)
+        app = App(args=["init"])
+        app.run()
+
+        settings_path = tmp_path / ".vscode" / "settings.json"
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+
+        assert "json.schemas" in settings
+        schemas = settings["json.schemas"]
+        assert len(schemas) >= 2
+
+        # Check for config and events schema associations
+        file_matches = []
+        for schema in schemas:
+            file_matches.extend(schema.get("fileMatch", []))
+
+        assert "meetup-scheduler-local.json" in file_matches
+        assert "events/*.json" in file_matches
+
+    def test_vscode_settings_merges_with_existing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Test that init merges schema settings with existing .vscode/settings.json."""
+        monkeypatch.chdir(tmp_path)
+
+        # Create existing settings file
+        vscode_dir = tmp_path / ".vscode"
+        vscode_dir.mkdir()
+        settings_path = vscode_dir / "settings.json"
+        existing_settings = {
+            "editor.tabSize": 2,
+            "json.schemas": [
+                {"fileMatch": ["*.other.json"], "url": "./some-schema.json"}
+            ],
+        }
+        with open(settings_path, "w", encoding="utf-8") as f:
+            json.dump(existing_settings, f)
+
+        app = App(args=["init"])
+        app.run()
+
+        # Check that existing settings are preserved
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        assert settings.get("editor.tabSize") == 2
+
+        # Check that schema associations were added
+        schemas = settings.get("json.schemas", [])
+        file_matches = []
+        for schema in schemas:
+            file_matches.extend(schema.get("fileMatch", []))
+
+        assert "*.other.json" in file_matches  # Existing preserved
+        assert "meetup-scheduler-local.json" in file_matches  # New added

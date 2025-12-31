@@ -45,12 +45,17 @@ class ReadmeCommand(BaseCommand):
             0 on success, 1 on error.
         """
         raw = getattr(self.args, "raw", False) or False
+        pager = getattr(self.args, "pager", True)
         section = getattr(self.args, "section", None)
+
+        # Use pager for formatted output if --pager is enabled (default)
+        # pager can be None in testing mode, treat as True
+        use_pager = not raw and (pager if pager is not None else True)
 
         try:
             if section:
                 # Print a specific section
-                if not self._reader.print_section(section, raw=raw):
+                if not self._reader.print_section(section, raw=raw, pager=use_pager):
                     self.app.log.error(f"Section not found: {section}")
                     self._print_available_sections()
                     return 1
@@ -58,8 +63,8 @@ class ReadmeCommand(BaseCommand):
                 # Print raw markdown
                 self._reader.print_raw()
             else:
-                # Print formatted markdown
-                self._reader.print_formatted()
+                # Print formatted markdown with pager
+                self._reader.print_formatted(pager=use_pager)
 
             return 0
 
